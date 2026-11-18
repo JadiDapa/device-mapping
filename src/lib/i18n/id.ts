@@ -25,9 +25,30 @@ export const id = {
     passwordRequired: "Kata sandi wajib diisi.",
     passwordMinLength: "Kata sandi minimal 8 karakter.",
   },
+  app: {
+    title: "Device Mapper",
+    description:
+      "Pemetaan dan progres instalasi perangkat jaringan di atas peta satelit.",
+  },
+  status: {
+    not_installed: "Belum terinstall",
+    partial: "Terinstall sebagian",
+    installed_untested: "Terinstall, belum diuji",
+    tested: "Sudah diuji",
+  },
+  partialComponent: {
+    power: "Power",
+    fo: "FO",
+    ethernet: "Ethernet",
+  },
+  role: {
+    admin: "Admin",
+    guest: "Tamu",
+  },
   admin: {
     dashboardTitle: "Dasbor",
     signedInAs: "Masuk sebagai",
+    role: "Peran",
   },
   common: {
     loading: "Memuat...",

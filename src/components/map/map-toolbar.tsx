@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  CameraIcon,
   LocateFixedIcon,
   MapPinPlusIcon,
   MoveIcon,
@@ -61,10 +62,13 @@ export function MapToolbar({
   const setShowTypeIcon = useMapStore((s) => s.setShowTypeIcon);
   const showConnections = useMapStore((s) => s.showConnections);
   const setShowConnections = useMapStore((s) => s.setShowConnections);
+  const showCameras = useMapStore((s) => s.showCameras);
+  const setShowCameras = useMapStore((s) => s.setShowCameras);
   const [displayOpen, setDisplayOpen] = useState(false);
   const adding = mode === "addDevice";
   const addingSource = mode === "addSource";
   const addingExtender = mode === "addExtender";
+  const addingCamera = mode === "addCamera";
   const moving = mode === "move";
 
   return (
@@ -121,6 +125,18 @@ export function MapToolbar({
         <Button
           type="button"
           size="sm"
+          variant={addingCamera ? "secondary" : "outline"}
+          className="pointer-events-auto hidden min-h-9 shadow-md md:inline-flex"
+          onClick={() => setMode(addingCamera ? "idle" : "addCamera")}
+        >
+          {addingCamera ? <XIcon /> : <CameraIcon />}
+          {addingCamera ? id.camera.cancelAdd : id.camera.add}
+        </Button>
+      )}
+      {canEdit && (
+        <Button
+          type="button"
+          size="sm"
           variant={moving ? "secondary" : "outline"}
           aria-pressed={moving}
           className="pointer-events-auto min-h-11 shadow-md md:hidden"
@@ -165,6 +181,12 @@ export function MapToolbar({
           onClick={() => setShowConnections(!showConnections)}
         >
           {id.toggles.showConnections}
+        </ToggleButton>
+        <ToggleButton
+          pressed={showCameras}
+          onClick={() => setShowCameras(!showCameras)}
+        >
+          {id.camera.toggle}
         </ToggleButton>
       </div>
     </div>

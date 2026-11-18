@@ -139,10 +139,7 @@ export async function deleteCameraImageAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     await requireAdmin();
-    const { fileKeys } = await deleteCameraImage(
-      getDb(),
-      uuid.parse(imageId),
-    );
+    const { fileKeys } = await deleteCameraImage(getDb(), uuid.parse(imageId));
     await deleteFiles(fileKeys);
     revalidateZone();
     return ok();

@@ -4,6 +4,8 @@ import { useCallback } from "react";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { GeoJsonPolygon } from "@/db/schema";
 import type { ConnectionType } from "@/lib/connection";
+import { CameraMarker } from "./camera-marker";
+import type { CameraPointView } from "@/components/camera/types";
 import { ConnectionLines } from "./connection-lines";
 import { DeviceMarker, type MarkerDevice } from "./device-marker";
 import {
@@ -40,6 +42,13 @@ type Props = {
   extenderDraft: { lat: number; lng: number } | null;
   onSelectExtender: (id: string) => void;
   onExtenderMoved: (id: string, lat: number, lng: number) => void;
+  cameraPoints: CameraPointView[];
+  selectedCameraId: string | null;
+  /** Position of the camera point being created, shown as a preview marker. */
+  cameraDraft: { lat: number; lng: number } | null;
+  onSelectCamera: (id: string) => void;
+  onCameraMoved: (id: string, lat: number, lng: number) => void;
+  onOpenGallery: (pointId: string, index: number) => void;
   canEdit: boolean;
   onSelect: (id: string) => void;
   onMoved: (id: string, lat: number, lng: number) => void;
@@ -67,6 +76,12 @@ export default function ZoneMap({
   extenderDraft,
   onSelectExtender,
   onExtenderMoved,
+  cameraPoints,
+  selectedCameraId,
+  cameraDraft,
+  onSelectCamera,
+  onCameraMoved,
+  onOpenGallery,
   canEdit,
   onSelect,
   onMoved,
@@ -81,6 +96,7 @@ export default function ZoneMap({
   const showLocation = useMapStore((s) => s.showLocation);
   const showTypeIcon = useMapStore((s) => s.showTypeIcon);
   const showConnections = useMapStore((s) => s.showConnections);
+  const showCameras = useMapStore((s) => s.showCameras);
   // Desktop drags directly; on touch screens markers only move in "move" mode
   // so scrolling or tapping never shifts a point by accident (PRD F4).
   const isDesktop = useIsDesktop();
@@ -90,9 +106,11 @@ export default function ZoneMap({
     devices.find((d) => d.id === selectedId) ??
     sources.find((s) => s.id === selectedSourceId) ??
     extenders.find((x) => x.id === selectedExtenderId) ??
+    cameraPoints.find((c) => c.id === selectedCameraId) ??
     null;
   const noopMoved = useCallback(() => {}, []);
   const noopSelect = useCallback(() => {}, []);
+  const noopGallery = useCallback(() => {}, []);
 
   return (
     <MapView
@@ -130,6 +148,36 @@ export default function ZoneMap({
           draggable={false}
           onSelect={noopSelect}
           onMoved={noopMoved}
+        />
+      )}
+      {showCameras &&
+        cameraPoints.map((c) => (
+          <CameraMarker
+            key={c.id}
+            point={c}
+            selected={c.id === selectedCameraId}
+            draggable={canDrag}
+            onSelect={onSelectCamera}
+            onMoved={onCameraMoved}
+            onOpenGallery={onOpenGallery}
+          />
+        ))}
+      {cameraDraft && (
+        <CameraMarker
+          point={{
+            id: "draft",
+            zoneId: "",
+            name: "…",
+            notes: null,
+            images: [],
+            ...cameraDraft,
+          }}
+          selected
+          draggable={false}
+          popup={false}
+          onSelect={noopSelect}
+          onMoved={noopMoved}
+          onOpenGallery={noopGallery}
         />
       )}
       {sources.map((s) => (
@@ -185,7 +233,10 @@ export default function ZoneMap({
       )}
       <PickPosition
         active={
-          mode === "addDevice" || mode === "addSource" || mode === "addExtender"
+          mode === "addDevice" ||
+          mode === "addSource" ||
+          mode === "addExtender" ||
+          mode === "addCamera"
         }
         onPick={onPick}
       />

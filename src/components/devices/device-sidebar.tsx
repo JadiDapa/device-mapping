@@ -24,6 +24,7 @@ import {
   NetworkIcon,
   RadioTowerIcon,
   PlusIcon,
+  CameraIcon,
 } from "lucide-react";
 import { useMapStore } from "@/components/map/map-store";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ type Props = {
   onAdd: () => void;
   onAddSource: () => void;
   onAddExtender: () => void;
+  onAddCamera: () => void;
   /** Add a device at the browser GPS position. */
   onAddHere: () => void;
 };
@@ -61,6 +63,7 @@ export function DeviceSidebar({
   onAdd,
   onAddSource,
   onAddExtender,
+  onAddCamera,
   onAddHere,
 }: Props) {
   const filters = useMapStore((s) => s.filters);
@@ -139,6 +142,15 @@ export function DeviceSidebar({
                 title={id.extender.add}
               >
                 <RadioTowerIcon />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={onAddCamera}
+                aria-label={id.camera.add}
+                title={id.camera.add}
+              >
+                <CameraIcon />
               </Button>
             </div>
           )}

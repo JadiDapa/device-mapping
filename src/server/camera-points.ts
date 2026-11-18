@@ -295,9 +295,7 @@ export async function deleteCameraImage(
       .from(cameraPoints)
       .where(eq(cameraPoints.id, found.cameraPointId))
       .for("update");
-    await tx
-      .delete(cameraPointImages)
-      .where(eq(cameraPointImages.id, imageId));
+    await tx.delete(cameraPointImages).where(eq(cameraPointImages.id, imageId));
     await tx
       .update(cameraPointImages)
       .set({ position: sql`${cameraPointImages.position} - 1` })

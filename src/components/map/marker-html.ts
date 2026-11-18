@@ -1,5 +1,10 @@
 import { createElement } from "react";
-import { ArrowRightIcon, NetworkIcon, RadioTowerIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CameraIcon,
+  NetworkIcon,
+  RadioTowerIcon,
+} from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getDeviceIcon, RouterBadgeIcon } from "@/lib/device-icons";
 import { statusColor, statusLabel, type DeviceStatus } from "@/lib/status";
@@ -119,6 +124,36 @@ export function buildExtenderMarkerHtml(m: ExtenderMarkerHtmlInput): string {
     `<span class="device-marker__num" data-len="${len}" aria-hidden="true">` +
     `<span>${escapeHtml(from)}</span>${arrow}<span>${escapeHtml(to)}</span></span>` +
     `<span class="device-marker__badge device-marker__badge--extender" aria-hidden="true">${badge}</span></div>`
+  );
+}
+
+export type CameraMarkerHtmlInput = {
+  name: string;
+  count: number;
+  selected: boolean;
+};
+
+/**
+ * HTML for a camera point's `L.divIcon`: the same pin in the neutral colour
+ * with a camera glyph, plus a photo-count badge (so it is told apart from
+ * devices and extenders by icon and badge, not only by colour).
+ */
+export function buildCameraMarkerHtml(m: CameraMarkerHtmlInput): string {
+  const glyph = svg("camera", () =>
+    createElement(CameraIcon, {
+      size: 16,
+      strokeWidth: 2.25,
+      "aria-hidden": true,
+    }),
+  );
+  const cls = m.selected
+    ? "device-marker device-marker--camera device-marker--selected"
+    : "device-marker device-marker--camera";
+  return (
+    `<div class="${cls}" data-testid="camera-marker" data-name="${escapeHtml(m.name)}" data-count="${m.count}">` +
+    `<span class="device-marker__dot" aria-hidden="true"></span>` +
+    `<span class="device-marker__num" aria-hidden="true">${glyph}</span>` +
+    `<span class="device-marker__badge device-marker__badge--count" aria-hidden="true">${m.count}</span></div>`
   );
 }
 

@@ -118,6 +118,8 @@
   --map-label-fg: var(--secondary-foreground);
   --map-extender-bg: var(--secondary);
   --map-extender-fg: var(--primary);
+  --map-camera-bg: var(--secondary);
+  --map-camera-fg: var(--primary);
   --map-source-bg: var(--secondary);
   --map-source-fg: var(--primary);
   --map-source-label-bg: var(--secondary);
@@ -415,6 +417,28 @@
 }
 .device-marker--extender .device-marker__num[data-len="l"] {
   font-size: 9px;
+}
+/* Camera pin: neutral colour, camera glyph, photo-count badge (bottom-right). */
+.device-marker--camera {
+  --marker-color: var(--map-camera-bg);
+}
+.device-marker--camera .device-marker__num {
+  color: var(--map-camera-fg);
+  text-shadow: none;
+}
+.device-marker__badge--count {
+  right: -6px;
+  bottom: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--map-type-badge-bg);
+  color: var(--map-type-badge-fg);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
 }
 /* Centred on the pin head's top-right outline (the 45° point of the circle),
    so it hugs the pin; ~45% of the head width, number stays centred. */

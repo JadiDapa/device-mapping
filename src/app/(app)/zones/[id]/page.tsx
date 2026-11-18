@@ -5,6 +5,7 @@ import { ZoneWorkspace } from "@/components/devices/zone-workspace";
 import { requireUser } from "@/lib/auth";
 import { listDeviceTypes } from "@/server/device-types";
 import { listZoneDevices } from "@/server/devices";
+import { listZoneCameraPoints } from "@/server/camera-points";
 import { listZoneExtenders } from "@/server/extenders";
 import {
   listForeignSourceDevices,
@@ -32,6 +33,7 @@ export default async function ZonePage({
   const [
     devices,
     extenders,
+    cameraPoints,
     types,
     summary,
     zoneOptions,
@@ -40,6 +42,7 @@ export default async function ZonePage({
   ] = await Promise.all([
     listZoneDevices(db, zoneId),
     listZoneExtenders(db, zoneId),
+    listZoneCameraPoints(db, zoneId),
     listDeviceTypes(db),
     getZoneSummary(db, zoneId),
     listZoneOptions(db),
@@ -70,6 +73,7 @@ export default async function ZonePage({
         }}
         devices={devices}
         extenders={extenders}
+        cameraPoints={cameraPoints}
         types={types.map((t) => ({ id: t.id, name: t.name, icon: t.icon }))}
         summary={
           summary ?? {

@@ -9,8 +9,13 @@ import {
   useTransition,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PencilIcon } from "lucide-react";
 import { toast } from "sonner";
+import { CameraGallery } from "@/components/camera/camera-gallery";
+import { CameraPointPanel } from "@/components/camera/camera-point-panel";
+import type { CameraPointView } from "@/components/camera/types";
+import { useCameraPoints } from "@/components/camera/use-camera-points";
 import { ExportPngButton } from "@/components/export/export-png-button";
 import { ZoneMap } from "@/components/map";
 import { Legend } from "@/components/map/legend";
@@ -46,6 +51,7 @@ import {
   deleteNetworkSourceAction,
   moveNetworkSourcePositionAction,
 } from "@/server/actions/sources";
+import { deleteCameraPointAction } from "@/server/actions/camera-points";
 import {
   deleteExtenderAction,
   moveExtenderPositionAction,
@@ -70,6 +76,7 @@ type Props = {
   };
   devices: ZoneDevice[];
   extenders: Extender[];
+  cameraPoints: CameraPointView[];
   types: { id: string; name: string; icon: string }[];
   summary: {
     total: number;
@@ -136,6 +143,7 @@ export function ZoneWorkspace({
   zone,
   devices,
   extenders,
+  cameraPoints,
   types,
   summary,
   otherZones,
@@ -178,6 +186,10 @@ export function ZoneWorkspace({
   const selectedSourceId = useMapStore((s) => s.selectedSourceId);
   const selectSource = useMapStore((s) => s.selectSource);
   const filters = useMapStore((s) => s.filters);
+  const selectedCameraId = useMapStore((s) => s.selectedCameraId);
+  const cameraDraft = useMapStore((s) => s.cameraDraft);
+  const selectCamera = useMapStore((s) => s.selectCamera);
+  const setCameraDraft = useMapStore((s) => s.setCameraDraft);
 
   // Per-zone UI state resets on entering a zone; the persisted display
   // toggles are restored after mount so SSR and first paint agree.
@@ -220,6 +232,8 @@ export function ZoneWorkspace({
     sourceDraft ||
     extenderDraft ||
     selectedExtender ||
+    cameraDraft ||
+    selectedCameraId ||
     selectedId ||
     selectedSourceId ||
     editingSource,
@@ -326,6 +340,36 @@ export function ZoneWorkspace({
     [zone.boundary],
   );
 
+  const router = useRouter();
+  const cameras = useCameraPoints({
+    initial: cameraPoints,
+    warnIfOutside,
+  });
+  const galleryPoint = cameras.gallery
+    ? (cameras.points.find((p) => p.id === cameras.gallery?.pointId) ?? null)
+    : null;
+  const onSelectCamera = useCallback(
+    (pointId: string) => {
+      setDraft(null);
+      setSourceDraft(null);
+      setExtenderDraft(null);
+      setSelectedExtenderId(null);
+      setEditingSource(false);
+      selectCamera(pointId);
+    },
+    [selectCamera],
+  );
+  function onDeleteCamera(pointId: string) {
+    startTransition(async () => {
+      const res = await deleteCameraPointAction(pointId);
+      if (!res.ok) toast.error(res.error);
+      else {
+        cameras.removePoint(pointId);
+        toast.success(id.camera.deleted);
+      }
+    });
+  }
+
   const extenderDeviceOptions = useMemo(
     () =>
       optimistic.map((d) => ({
@@ -358,9 +402,11 @@ export function ZoneWorkspace({
       setEditingSource(false);
       select(null);
       selectSource(null);
+      selectCamera(null);
+      setCameraDraft(null);
       setSelectedExtenderId(extenderId);
     },
-    [select, selectSource],
+    [select, selectSource, selectCamera, setCameraDraft],
   );
 
   const onExtenderMoved = useCallback(
@@ -448,6 +494,8 @@ export function ZoneWorkspace({
       const adding = useMapStore.getState().mode;
       select(null);
       selectSource(null);
+      selectCamera(null);
+      setCameraDraft(null);
       setMode("idle");
       setEditingSource(false);
       setSelectedExtenderId(null);
@@ -461,6 +509,12 @@ export function ZoneWorkspace({
         setDraft(null);
         setSourceDraft(null);
         setExtenderDraft(pos);
+      } else if (adding === "addCamera") {
+        warnIfOutside(pos);
+        setDraft(null);
+        setSourceDraft(null);
+        setExtenderDraft(null);
+        setCameraDraft(pos);
       } else {
         warnIfOutside(pos);
         setSourceDraft(null);
@@ -468,7 +522,14 @@ export function ZoneWorkspace({
         setDraft(pos);
       }
     },
-    [select, selectSource, setMode, warnIfOutside],
+    [
+      select,
+      selectSource,
+      selectCamera,
+      setCameraDraft,
+      setMode,
+      warnIfOutside,
+    ],
   );
 
   /** "Tambah di posisi saya": same flow as picking a point on the map. */
@@ -604,7 +665,10 @@ export function ZoneWorkspace({
 
   const nextSeq = optimistic.length + 1;
   const adding =
-    mode === "addDevice" || mode === "addSource" || mode === "addExtender";
+    mode === "addDevice" ||
+    mode === "addSource" ||
+    mode === "addExtender" ||
+    mode === "addCamera";
   const moving = mode === "move";
   const zoneChoices = [{ id: zone.id, name: zone.name }, ...otherZones];
 
@@ -660,6 +724,12 @@ export function ZoneWorkspace({
             extenderDraft={extenderDraft}
             onSelectExtender={onSelectExtender}
             onExtenderMoved={onExtenderMoved}
+            cameraPoints={cameras.points}
+            selectedCameraId={selectedCameraId}
+            cameraDraft={cameraDraft}
+            onSelectCamera={onSelectCamera}
+            onCameraMoved={cameras.onMoved}
+            onOpenGallery={cameras.openGallery}
             canEdit={isAdmin}
             onSelect={onSelectMarker}
             onMoved={onMoved}
@@ -696,7 +766,9 @@ export function ZoneWorkspace({
                       ? id.source.addHint
                       : mode === "addExtender"
                         ? id.extender.addHint
-                        : id.device.addHint}
+                        : mode === "addCamera"
+                          ? id.camera.addHint
+                          : id.device.addHint}
                 </span>
                 <Button
                   type="button"
@@ -737,7 +809,43 @@ export function ZoneWorkspace({
               aria-hidden
             />
           </button>
-          {extenderDraft || selectedExtender ? (
+          {cameraDraft || cameras.selected ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <CameraPointPanel
+                key={
+                  cameras.selected
+                    ? `edit:${cameras.selected.id}`
+                    : `new:${cameraDraft?.lat}:${cameraDraft?.lng}`
+                }
+                zoneId={zone.id}
+                position={cameraDraft ?? undefined}
+                point={cameras.selected ?? undefined}
+                isAdmin={isAdmin}
+                onCreated={(point) => {
+                  cameras.addPoint(point);
+                  selectCamera(point.id);
+                }}
+                onPatch={(patch) =>
+                  cameras.selected &&
+                  cameras.patchPoint(cameras.selected.id, patch)
+                }
+                onBack={() => {
+                  setCameraDraft(null);
+                  selectCamera(null);
+                }}
+                onDelete={
+                  cameras.selected
+                    ? () => onDeleteCamera(cameras.selected!.id)
+                    : undefined
+                }
+                onOpenGallery={(index) =>
+                  cameras.selected &&
+                  cameras.openGallery(cameras.selected.id, index)
+                }
+                onRefresh={() => router.refresh()}
+              />
+            </div>
+          ) : extenderDraft || selectedExtender ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               <ExtenderPanel
                 key={
@@ -868,11 +976,20 @@ export function ZoneWorkspace({
               onAdd={() => setMode("addDevice")}
               onAddSource={() => setMode("addSource")}
               onAddExtender={() => setMode("addExtender")}
+              onAddCamera={() => setMode("addCamera")}
               onAddHere={onAddHere}
             />
           )}
         </aside>
       </div>
+      <CameraGallery
+        point={galleryPoint}
+        index={cameras.gallery?.index ?? 0}
+        onIndexChange={(i) =>
+          cameras.gallery && cameras.openGallery(cameras.gallery.pointId, i)
+        }
+        onClose={cameras.closeGallery}
+      />
     </div>
   );
 }

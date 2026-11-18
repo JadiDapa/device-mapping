@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { statusColor } from "@/lib/status";
 import {
+  buildCameraMarkerHtml,
   buildMarkerHtml,
   buildSourceMarkerHtml,
   type MarkerHtmlInput,
@@ -92,5 +93,18 @@ describe("buildSourceMarkerHtml", () => {
     expect(buildSourceMarkerHtml({ name: "S", selected: false })).not.toContain(
       "source-marker--selected",
     );
+  });
+
+  it("builds a camera marker with an escaped name and the photo count", () => {
+    const html = buildCameraMarkerHtml({
+      name: "<Lobby>",
+      count: 3,
+      selected: true,
+    });
+    expect(html).toContain("device-marker--camera");
+    expect(html).toContain("device-marker--selected");
+    expect(html).toContain('data-count="3"');
+    expect(html).toContain("&lt;Lobby&gt;");
+    expect(html).toContain("<svg");
   });
 });

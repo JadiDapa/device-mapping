@@ -9,7 +9,8 @@ import { getSessionCookie } from "better-auth/cookies";
  * Server Action; this proxy only avoids a flash of app UI for obviously
  * signed-out visitors.
  *
- * Public: /login, /api/auth, /api/health, /print (guarded by a signed export
+ * Public: /login, /api/auth, /api/health, /api/uploads and
+ * /api/camera-points (their Route Handlers answer 401 JSON themselves), /print (guarded by a signed export
  * token, added in M6), Next internals and static assets.
  */
 export function proxy(request: NextRequest) {
@@ -21,6 +22,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!login|api/auth|api/health|print|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|txt|xml)$).*)",
+    "/((?!login|api/auth|api/health|api/uploads|api/camera-points|print|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|txt|xml)$).*)",
   ],
 };

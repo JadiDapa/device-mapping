@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { ForbiddenError, UnauthorizedError } from "@/lib/authz";
 import { fmt } from "@/lib/i18n/format";
 import { id } from "@/lib/i18n/id";
+import { MAX_IMAGES_PER_POINT } from "@/lib/validators/camera";
 import {
   DeviceTypeInUseError,
   DeviceTypeNameTakenError,
@@ -12,6 +13,12 @@ import {
   InvalidParentError,
   ReorderMismatchError,
 } from "@/server/devices";
+import {
+  CameraImageNotFoundError,
+  CameraPointNotFoundError,
+  ImageLimitError,
+  ImageReorderMismatchError,
+} from "@/server/camera-points";
 import { ExtenderNotFoundError } from "@/server/extenders";
 import { NetworkSourceNotFoundError } from "@/server/network-sources";
 import {
@@ -115,6 +122,22 @@ export async function runAction<T>(
     }
     if (error instanceof ExtenderNotFoundError) {
       return { ok: false, status: 404, error: id.extender.notFound };
+    }
+    if (error instanceof CameraPointNotFoundError) {
+      return { ok: false, status: 404, error: id.camera.notFound };
+    }
+    if (error instanceof CameraImageNotFoundError) {
+      return { ok: false, status: 404, error: id.camera.imageNotFound };
+    }
+    if (error instanceof ImageLimitError) {
+      return {
+        ok: false,
+        status: 409,
+        error: fmt(id.camera.imageLimit, { n: MAX_IMAGES_PER_POINT }),
+      };
+    }
+    if (error instanceof ImageReorderMismatchError) {
+      return { ok: false, status: 409, error: id.camera.reorderMismatch };
     }
     if (error instanceof InvalidParentError) {
       return {

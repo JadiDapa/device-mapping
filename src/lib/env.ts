@@ -36,6 +36,8 @@ export const envSchema = z
       .url("EXPORT_BASE_URL must be a valid URL")
       .optional()
       .or(z.literal("").transform(() => undefined)),
+    // Where uploaded camera-point images live (a Docker volume in production).
+    UPLOADS_DIR: z.string().optional().default("./data/uploads"),
     TZ: z.string().optional().default("Asia/Jakarta"),
   })
   .transform((env) => ({

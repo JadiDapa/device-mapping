@@ -26,3 +26,6 @@ Thumbs.db
 # playwright
 playwright-report/
 test-results/
+
+# uploaded images (local dev)
+/data/

@@ -5,6 +5,8 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { requireAdmin } from "@/lib/auth";
 import { zoneInputSchema } from "@/lib/validators/zone";
+import { listZoneImageKeys } from "@/server/camera-points";
+import { deleteFiles } from "@/server/storage";
 import { createZone, deleteZone, updateZone } from "@/server/zones";
 import { ok, runAction, type ActionResult } from "./result";
 
@@ -49,7 +51,12 @@ export async function deleteZoneAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     await requireAdmin();
-    await deleteZone(getDb(), uuid.parse(zoneId), confirmName);
+    const db = getDb();
+    const zoneUuid = uuid.parse(zoneId);
+    // Collect image files first: the rows cascade away with the zone.
+    const fileKeys = await listZoneImageKeys(db, zoneUuid);
+    await deleteZone(db, zoneUuid, confirmName);
+    await deleteFiles(fileKeys);
     revalidatePath("/");
     return ok();
   });

@@ -26,6 +26,14 @@ export default async function AppLayout({
         <Link href="/" className="font-semibold">
           {id.app.title}
         </Link>
+        {role === "admin" && (
+          <Link
+            href="/admin/device-types"
+            className="text-muted-foreground hover:text-foreground text-sm"
+          >
+            {id.deviceType.title}
+          </Link>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <div className="hidden text-right text-xs leading-tight sm:block">
             <div>{session.user.email}</div>

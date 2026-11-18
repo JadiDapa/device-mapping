@@ -71,6 +71,9 @@ export default function PrintMap({
       touchZoom={false}
       boxZoom={false}
       keyboard={false}
+      // Tiles must be fully opaque when the screenshot is taken.
+      fadeAnimation={false}
+      zoomAnimation={false}
       zoomSnap={0.5}
       maxZoom={publicEnv.tileMaxZoom}
       className="size-full"
@@ -91,7 +94,7 @@ export default function PrintMap({
       {boundary && (
         <Polygon
           positions={toLatLngs(boundary)}
-          pathOptions={{ className: BOUNDARY_CLASS }}
+          className={BOUNDARY_CLASS}
           interactive={false}
         />
       )}

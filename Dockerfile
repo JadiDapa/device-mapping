@@ -27,7 +27,7 @@ RUN npm run build
 # ---------------------------------------------------------------------------
 # runner — slim runtime image. `npm run build` already copied static assets and
 # public/ into .next/standalone. Migrate/seed scripts run via tsx before the
-# server starts. Chromium for PDF/PNG export is added in M6.
+# server starts. Chromium (Playwright) is installed for PDF/PNG export.
 # ---------------------------------------------------------------------------
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
@@ -52,6 +52,13 @@ COPY --from=deps /app/node_modules ./node_modules
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh && chown -R nextjs:nodejs /app
+
+# Chromium + its system libraries for export (F7). Installed as root into a
+# shared path before dropping privileges. Chromium cannot use its sandbox in a
+# container without extra capabilities, hence EXPORT_NO_SANDBOX.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV EXPORT_NO_SANDBOX=1
+RUN npx playwright install --with-deps chromium \n    && chmod -R a+rX /ms-playwright \n    && rm -rf /var/lib/apt/lists/*
 
 USER nextjs
 

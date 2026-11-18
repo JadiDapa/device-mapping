@@ -42,7 +42,9 @@ export async function createZone(page: Page, zoneName: string) {
   await drawPolygon(page);
   await page.getByRole("button", { name: "Simpan" }).click();
   await page.waitForURL(/\/zones\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("heading", { name: zoneName })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: zoneName, level: 1 }),
+  ).toBeVisible();
 }
 
 export async function addDevice(

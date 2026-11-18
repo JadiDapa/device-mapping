@@ -96,9 +96,7 @@ export default function AllZonesMap({ zones, devices, sources }: Props) {
               <Polygon
                 key={z.id}
                 positions={toLatLngs(z.boundary)}
-                pathOptions={{
-                  className: `${BOUNDARY_CLASS} zone-boundary--link`,
-                }}
+                className={`${BOUNDARY_CLASS} zone-boundary--link`}
                 eventHandlers={{ click: () => router.push(`/zones/${z.id}`) }}
               >
                 <Tooltip sticky>

@@ -34,7 +34,10 @@ test("export a 2-zone PDF recap and a zone PNG", async ({ page }) => {
 
   // PNG: open the first zone and export its map.
   await page.goto("/");
-  await page.locator('a[href^="/zones/"]').first().click();
+  await page
+    .locator('a[href^="/zones/"]:not([href="/zones/new"])')
+    .first()
+    .click();
   await expect(page.getByTestId("summary-box")).toBeVisible();
   const [png] = await Promise.all([
     page.waitForEvent("download", { timeout: 120_000 }),

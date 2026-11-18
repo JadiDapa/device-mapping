@@ -4,8 +4,8 @@ Aplikasi web untuk menitikkan, melabeli, dan memantau progres instalasi perangka
 jaringan di atas peta satelit, per zona. Spesifikasi lengkap: [`docs/PRD.md`](docs/PRD.md).
 Aturan kerja untuk agent: [`CLAUDE.md`](CLAUDE.md).
 
-Status: **M1 selesai** (fondasi: dependensi, PostgreSQL + Drizzle, Better Auth + role, seed).
-Halaman dashboard/peta mulai di M2.
+Status: **M0–M6 selesai** (fondasi, zona & peta, perangkat, sidebar, sumber jaringan + `/map`,
+export PNG/PDF). M7 (polishing mobile, manajemen user, test lengkap) belum.
 
 ## Stack
 
@@ -42,7 +42,7 @@ Bila memakai Postgres dari Compose, `DATABASE_URL` yang cocok adalah
 | `npm run dev` / `build` / `start`        | Dev / build standalone / jalankan hasil build       |
 | `npm run typecheck`                      | `tsc --noEmit`                                      |
 | `npm test`                               | Vitest (butuh `TEST_DATABASE_URL`, lihat di bawah)  |
-| `npm run test:e2e`                       | Playwright (test e2e diisi mulai M2)                |
+| `npm run test:e2e`                       | Playwright e2e (`E2E_BASE_URL` = server yang sudah jalan) |
 | `npm run db:generate`                    | Buat migrasi baru dari `src/db/schema.ts`           |
 | `npm run db:migrate`                     | Terapkan migrasi (runtime migrator)                 |
 | `npm run db:seed` / `seed:dev`           | Seed admin + tipe perangkat / data contoh           |
@@ -60,6 +60,7 @@ Bila memakai Postgres dari Compose, `DATABASE_URL` yang cocok adalah
 | `BETTER_AUTH_URL`                                                            | Opsional. Bila diisi, base URL dipatok; bila kosong, host localhost/LAN dipercaya per request. |
 | `TRUSTED_ORIGINS`                                                            | Origin tambahan untuk API auth, dipisah koma.                                                  |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`                                    | Dipakai `db:seed` saja (password minimal 8 karakter).                                          |
+| `EXPORT_BASE_URL`                                                            | Opsional. Alamat app yang dibuka Chromium saat export. Default `http://127.0.0.1:$PORT`.       |
 | `TZ`                                                                         | Default `Asia/Jakarta`.                                                                        |
 | `NEXT_PUBLIC_TILE_URL`, `_TILE_ATTRIBUTION`, `_TILE_MAX_ZOOM`                | Tile satelit (default Esri World Imagery, tanpa API key). Attribution wajib tampil.            |
 | `NEXT_PUBLIC_DEFAULT_CENTER_LAT`, `_LNG`, `NEXT_PUBLIC_DEFAULT_ZOOM`         | Tampilan awal peta. Nilai bawaan hanyalah perkiraan; ganti dengan koordinat area pabrik.       |
@@ -113,5 +114,18 @@ sebelum kedua plugin itu mendukungnya. `react-leaflet` 5 membutuhkan React 19 (s
 ## Deploy (Docker)
 
 `docker compose --profile app up --build` menjalankan aplikasi + Postgres. Entrypoint menjalankan
-migrasi, seed admin, lalu `node server.js`. Chromium untuk export PNG/PDF (Playwright) ditambahkan
-di M6 (`playwright install chromium --with-deps`).
+migrasi, seed admin, lalu `node server.js`.
+
+## Export PNG / PDF (F7)
+
+Route Handler `/api/export/png?zone=<id>` dan `/api/export/pdf?zones=<id,id>` (semua pengguna yang
+sudah masuk, termasuk tamu) membuka halaman internal `/print/*` di Chromium headless lewat
+**token HMAC berumur 120 detik** (kunci diturunkan dari `BETTER_AUTH_SECRET`), menunggu
+`window.__MAP_READY__`, lalu mengambil screenshot/PDF A4 landscape.
+
+- Lokal: `npx playwright install chromium`.
+- Docker: `Dockerfile` menjalankan `playwright install --with-deps chromium` dan men-set
+  `EXPORT_NO_SANDBOX=1` (Chromium tanpa sandbox di dalam container).
+- Build standalone menyertakan seluruh paket `playwright-core` (`outputFileTracingIncludes`
+  di `next.config.ts`), karena tracer tidak melihat `browsers.json` yang dibaca saat runtime.
+- Export butuh akses internet ke server tile (Esri) dari server aplikasi.

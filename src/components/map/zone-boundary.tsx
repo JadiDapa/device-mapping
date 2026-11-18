@@ -15,9 +15,8 @@ export function ZoneBoundary({ boundary }: { boundary: GeoJsonPolygon }) {
     ring.map(([lng, lat]) => [lat, lng] as [number, number]),
   );
   return (
-    <Polygon
-      positions={positions}
-      pathOptions={{ className: BOUNDARY_CLASS }}
-    />
+    // `className` must be a construction option: react-leaflet applies
+    // `pathOptions` through setStyle(), which never touches the class.
+    <Polygon positions={positions} className={BOUNDARY_CLASS} />
   );
 }

@@ -1,11 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// E2E tests are added from M2 onward (PRD §11). Chromium is installed with
-// `npx playwright install chromium` when first needed.
+// Credentials (SEED_ADMIN_*) come from .env; real environment variables win.
+try {
+  process.loadEnvFile();
+} catch {
+  // no .env — rely on the real environment
+}
+
+// E2E tests (PRD §11). They run against the dev server and the dev database
+// (`npm run db:migrate && npm run db:seed && npm run seed:dev`), and clean
+// up the zone they create. Chromium: `npx playwright install chromium`.
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
+  workers: 1,
   reporter: "list",
+  timeout: 90_000,
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",

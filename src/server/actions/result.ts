@@ -1,6 +1,13 @@
 import { ZodError } from "zod";
 import { ForbiddenError, UnauthorizedError } from "@/lib/authz";
+import { fmt } from "@/lib/i18n/format";
 import { id } from "@/lib/i18n/id";
+import {
+  DeviceTypeInUseError,
+  DeviceTypeNameTakenError,
+  DeviceTypeNotFoundError,
+} from "@/server/device-types";
+import { DeviceNotFoundError, ReorderMismatchError } from "@/server/devices";
 import {
   ZoneConfirmMismatchError,
   ZoneNameTakenError,
@@ -69,6 +76,30 @@ export async function runAction<T>(
         status: 422,
         error: id.zone.deleteConfirmMismatch,
       };
+    }
+    if (error instanceof DeviceTypeNameTakenError) {
+      return {
+        ok: false,
+        status: 409,
+        error: id.deviceType.nameTaken,
+        fieldErrors: { name: [id.deviceType.nameTaken] },
+      };
+    }
+    if (error instanceof DeviceTypeNotFoundError) {
+      return { ok: false, status: 404, error: id.deviceType.notFound };
+    }
+    if (error instanceof DeviceTypeInUseError) {
+      return {
+        ok: false,
+        status: 409,
+        error: fmt(id.deviceType.inUse, { n: error.count }),
+      };
+    }
+    if (error instanceof DeviceNotFoundError) {
+      return { ok: false, status: 404, error: id.device.notFound };
+    }
+    if (error instanceof ReorderMismatchError) {
+      return { ok: false, status: 409, error: id.device.reorderMismatch };
     }
     console.error(error);
     return { ok: false, status: 500, error: id.common.genericError };

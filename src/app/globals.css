@@ -23,6 +23,8 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  --map-zone-stroke: #ffffff;
+  --map-zone-fill: #ffffff;
 }
 
 .dark {
@@ -78,4 +80,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Zone boundary on the satellite map: thin white line, faint fill. CSS wins
+   over the presentation attributes Leaflet writes on the SVG path. */
+.zone-boundary {
+  stroke: var(--map-zone-stroke);
+  stroke-width: 2px;
+  fill: var(--map-zone-fill);
+  fill-opacity: 0.08;
 }

@@ -3,8 +3,8 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { verifyPassword } from "better-auth/crypto";
 import { beforeEach, describe, expect, it } from "vitest";
-import * as schema from "@/lib/db/schema";
-import { user, account } from "@/lib/db/schema";
+import * as schema from "@/db/schema";
+import { user, account } from "@/db/schema";
 import { seedAdmin } from "./seed-admin";
 
 describe("seedAdmin", () => {

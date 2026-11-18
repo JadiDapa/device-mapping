@@ -6,7 +6,7 @@ import { getSessionCookie } from "better-auth/cookies";
  * proxy.ts (not middleware.ts, per Next.js 16) protecting
  * /admin/*. This is only an OPTIMISTIC check: getSessionCookie reads cookie
  * presence without validating it. The real gate is the server-side
- * auth.api.getSession() call in app/admin/layout.tsx; this proxy only avoids
+ * auth.api.getSession() call in src/app/admin/layout.tsx; this proxy only avoids
  * a flash of admin UI for obviously signed-out visitors.
  */
 export function proxy(request: NextRequest) {

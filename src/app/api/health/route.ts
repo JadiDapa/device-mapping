@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSqlite } from "@/lib/db";
+import { getSqlite } from "@/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

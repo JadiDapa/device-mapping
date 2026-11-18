@@ -4,7 +4,7 @@
  * the migration step.
  */
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { getDb, getSqlite } from "@/lib/db";
+import { getDb, getSqlite } from "@/db";
 
 async function main() {
   const db = getDb();

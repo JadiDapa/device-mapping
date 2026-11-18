@@ -11,8 +11,8 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { hashPassword } from "better-auth/crypto";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import * as schema from "@/lib/db/schema";
-import { user, account } from "@/lib/db/schema";
+import * as schema from "@/db/schema";
+import { user, account } from "@/db/schema";
 
 export async function seedAdmin(
   db: BetterSQLite3Database<typeof schema>,
@@ -56,7 +56,7 @@ export async function seedAdmin(
 
 async function main() {
   const { getEnv } = await import("@/lib/env");
-  const { getDb, getSqlite } = await import("@/lib/db");
+  const { getDb, getSqlite } = await import("@/db");
   const env = getEnv();
 
   const result = await seedAdmin(getDb(), {

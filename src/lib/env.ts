@@ -15,6 +15,11 @@ export const envSchema = z
         (value) => /^postgres(ql)?:\/\//.test(value),
         "DATABASE_URL must start with postgres:// or postgresql://",
       ),
+    // Direct (non-pooled) connection, used by the migrator. Optional.
+    DATABASE_URL_UNPOOLED: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
     BETTER_AUTH_SECRET: z
       .string()
       .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
@@ -36,8 +41,16 @@ export const envSchema = z
       .url("EXPORT_BASE_URL must be a valid URL")
       .optional()
       .or(z.literal("").transform(() => undefined)),
-    // Where uploaded camera-point images live (a Docker volume in production).
+    // Local-disk uploads (dev/tests, or when no S3 endpoint is configured).
     UPLOADS_DIR: z.string().optional().default("./data/uploads"),
+    // Neon Object Storage (S3-compatible). When AWS_ENDPOINT_URL_S3 is set,
+    // uploads go to this bucket instead of UPLOADS_DIR. The AWS_* credentials
+    // are read from the environment by the AWS SDK itself.
+    AWS_ENDPOINT_URL_S3: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    STORAGE_BUCKET: z.string().optional().default("assets"),
     TZ: z.string().optional().default("Asia/Jakarta"),
   })
   .transform((env) => ({

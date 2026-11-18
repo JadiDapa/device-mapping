@@ -24,7 +24,13 @@ declare global {
 export function getDb(): Database {
   if (!globalThis.__appDb) {
     const { DATABASE_URL } = getEnv();
-    globalThis.__appSql = postgres(DATABASE_URL, { max: 10 });
+    // Neon's pooler (host contains "-pooler") is PgBouncer in transaction
+    // mode, which does not support named prepared statements.
+    const pooled = /-pooler\./.test(DATABASE_URL);
+    globalThis.__appSql = postgres(DATABASE_URL, {
+      max: 10,
+      ...(pooled ? { prepare: false } : {}),
+    });
     globalThis.__appDb = drizzle({ client: globalThis.__appSql, schema });
   }
   return globalThis.__appDb;

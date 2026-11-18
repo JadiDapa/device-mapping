@@ -114,4 +114,19 @@ describe("envSchema", () => {
       expect(result.data.trustedOrigins).toEqual([]);
     }
   });
+
+  it("accepts an optional EXPORT_BASE_URL and treats empty as unset", () => {
+    const set = envSchema.parse({
+      ...validEnv,
+      EXPORT_BASE_URL: "http://127.0.0.1:3000",
+    });
+    expect(set.EXPORT_BASE_URL).toBe("http://127.0.0.1:3000");
+    expect(
+      envSchema.parse({ ...validEnv, EXPORT_BASE_URL: "" }).EXPORT_BASE_URL,
+    ).toBeUndefined();
+    expect(
+      envSchema.safeParse({ ...validEnv, EXPORT_BASE_URL: "not a url" })
+        .success,
+    ).toBe(false);
+  });
 });

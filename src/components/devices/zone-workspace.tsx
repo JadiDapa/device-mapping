@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { PencilIcon } from "lucide-react";
 import { toast } from "sonner";
+import { ExportPngButton } from "@/components/export/export-png-button";
 import { ZoneMap } from "@/components/map";
 import { Legend } from "@/components/map/legend";
 import { MapToolbar } from "@/components/map/map-toolbar";
@@ -458,14 +459,17 @@ export function ZoneWorkspace({
             </p>
           )}
         </div>
-        {isAdmin && (
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/zones/${zone.id}/edit`}>
-              <PencilIcon />
-              {id.common.edit}
-            </Link>
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportPngButton zoneId={zone.id} zoneName={zone.name} />
+          {isAdmin && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/zones/${zone.id}/edit`}>
+                <PencilIcon />
+                {id.common.edit}
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">

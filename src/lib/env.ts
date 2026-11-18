@@ -31,6 +31,11 @@ export const envSchema = z
       .string()
       .optional()
       .transform((value) => (value ? value : undefined)),
+    // Where the export renderer (headless Chromium) reaches this app.
+    EXPORT_BASE_URL: z
+      .url("EXPORT_BASE_URL must be a valid URL")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
     TZ: z.string().optional().default("Asia/Jakarta"),
   })
   .transform((env) => ({

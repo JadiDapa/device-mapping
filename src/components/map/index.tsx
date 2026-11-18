@@ -28,3 +28,9 @@ export const AllZonesMap = dynamic(() => import("./all-zones-map"), {
   ssr: false,
   loading: MapLoading,
 });
+
+/** Static, export-only map (headless browser). */
+export const PrintMap = dynamic(() => import("./print-map"), {
+  ssr: false,
+  loading: MapLoading,
+});

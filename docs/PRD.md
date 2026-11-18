@@ -190,6 +190,27 @@ Semua tabel: `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at` 
  
 Constraint: `unique (zone_id, seq)` **DEFERRABLE INITIALLY DEFERRED** (agar renumber dalam satu transaksi aman). Jika drizzle-kit tidak mendukung deferrable, tulis lewat custom SQL migration.
  
+### `camera_points` (F9)
+| Kolom | Tipe |
+|---|---|
+| zone_id | fk zones, on delete cascade |
+| name | text, wajib (maks. 100) |
+| notes | text nullable |
+| lat, lng | double precision |
+| updated_by | fk user |
+
+### `camera_point_images` (F9)
+| Kolom | Tipe |
+|---|---|
+| camera_point_id | fk camera_points, on delete cascade |
+| position | int, 0..n-1 tanpa celah per titik |
+| caption | text nullable (maks. 300) |
+| display_key, thumb_key | text — kunci file di storage lokal |
+| width, height, size_bytes, mime | metadata versi tampilan |
+| uploaded_by | fk user |
+
+Constraint: `unique (camera_point_id, position)` **DEFERRABLE INITIALLY DEFERRED** (custom SQL di migrasi `0006`). Jumlah gambar per titik dihitung di DB, tidak disimpan.
+
 ### `device_status_history`
 | Kolom | Tipe |
 |---|---|
@@ -293,6 +314,17 @@ Layout mobile: peta penuh + **bottom sheet** untuk daftar & detail.
   3. Mengambil `page.screenshot()` untuk PNG atau `page.pdf({ format: "A4", landscape: true })` untuk PDF.
 - Deploy: build standalone harus menyertakan Chromium (`playwright install chromium --with-deps` di image/server). Dokumentasikan di README.
 - Guest boleh export.
+### F9. Titik Kamera (Camera Capture Position)
+Membantu pemetaan 3D: menandai dari titik mana foto area diambil, dengan banyak foto per titik (upload manual).
+- Admin: tambah titik (klik peta, sama seperti extender), edit nama/catatan, geser, hapus (menghapus foto dan file-nya).
+- Admin: upload banyak foto (pilih file / drag-and-drop), keterangan per foto, ubah urutan (drag-and-drop + tombol), hapus foto. Maks. 50 foto per titik.
+- Foto dikompres di browser (sisi terpanjang 2560 px, WebP; thumbnail 400 px, EXIF dibuang); server memvalidasi ulang tipe (magic bytes) dan ukuran.
+- Semua user (admin & guest): marker kamera + badge jumlah foto; klik marker → popover berisi nama + thumbnail + "Lihat semua"; klik thumbnail → galeri fullscreen (tombol, panah keyboard, swipe, strip thumbnail semua foto titik itu).
+- Toggle "Titik kamera" di toolbar (tersimpan).
+- Guest memanggil mutasi → 403. File hanya bisa diakses user yang login (`/api/uploads/...`).
+- Penyimpanan: disk lokal `UPLOADS_DIR` (volume Docker). Upload lewat Route Handler (bukan Server Action) agar tidak terkena batas 1 MB dan bisa menampilkan progres.
+- Tidak termasuk: export PNG/PDF, peta semua zona, resolusi asli, S3.
+
 ### F8. Responsif
 - Breakpoint `md`: di bawahnya sidebar → bottom sheet, toolbar diringkas, tombol berukuran sentuh (≥ 44px).
 - Semua fitur admin bisa dilakukan di HP.
@@ -401,6 +433,7 @@ src/
 | M5 | Sumber jaringan + relasi opsional + toggle garis koneksi; `/map` semua zona |
 | M6 | Export PNG & PDF via Playwright |
 | M7 | Polishing mobile (bottom sheet, mode pindah, posisi saya), manajemen user, test lengkap |
+| M9 | Titik kamera (F9): titik di peta, upload foto, popover, galeri fullscreen |
  
 Kerjakan berurutan; tiap milestone harus bisa dijalankan dan lolos `typecheck` + `format:check` sebelum lanjut.
  
@@ -408,7 +441,7 @@ Kerjakan berurutan; tiap milestone harus bisa dijalankan dan lolos `typecheck` +
  
 ## 13. Di Luar Lingkup (fase berikutnya)
  
-- Upload foto bukti instalasi
+- Upload foto bukti instalasi per perangkat (foto per titik kamera sudah ada di F9)
 - Mode offline / cache tile
 - Import/eksport data Excel atau KML
 - Realtime collaboration (websocket)

@@ -61,6 +61,7 @@ Bila memakai Postgres dari Compose, `DATABASE_URL` yang cocok adalah
 | `TRUSTED_ORIGINS`                                                            | Origin tambahan untuk API auth, dipisah koma.                                                  |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`                                    | Dipakai `db:seed` saja (password minimal 8 karakter).                                          |
 | `EXPORT_BASE_URL`                                                            | Opsional. Alamat app yang dibuka Chromium saat export. Default `http://127.0.0.1:$PORT`.       |
+| `UPLOADS_DIR`                                                                | Folder foto titik kamera (F9). Default `./data/uploads`; di Docker berupa volume `uploads`.    |
 | `TZ`                                                                         | Default `Asia/Jakarta`.                                                                        |
 | `NEXT_PUBLIC_TILE_URL`, `_TILE_ATTRIBUTION`, `_TILE_MAX_ZOOM`                | Tile satelit (default Esri World Imagery, tanpa API key). Attribution wajib tampil.            |
 | `NEXT_PUBLIC_DEFAULT_CENTER_LAT`, `_LNG`, `NEXT_PUBLIC_DEFAULT_ZOOM`         | Tampilan awal peta. Nilai bawaan hanyalah perkiraan; ganti dengan koordinat area pabrik.       |
@@ -115,6 +116,17 @@ sebelum kedua plugin itu mendukungnya. `react-leaflet` 5 membutuhkan React 19 (s
 
 `docker compose --profile app up --build` menjalankan aplikasi + Postgres. Entrypoint menjalankan
 migrasi, seed admin, lalu `node server.js`.
+
+## Titik kamera & foto (F9)
+
+- Foto disimpan di disk (`UPLOADS_DIR`), bukan di database; yang di database hanya kunci file.
+  **Backup = backup database + volume `uploads`.** Di Docker, volume `uploads` dipasang di
+  `/app/data/uploads`.
+- Foto dikompres di browser sebelum diunggah (maks. 2560 px, WebP). Resolusi asli tidak disimpan.
+- File dilayani `GET /api/uploads/<kunci>` hanya untuk user yang login (401 bila tidak).
+- **Penyimpangan dari "mutasi = Server Actions":** unggah foto memakai Route Handler
+  `POST /api/camera-points/<id>/images` (admin saja) karena Server Action dibatasi 1 MB dan tidak bisa
+  melaporkan progres. Mutasi lain (titik, keterangan, urutan, hapus) tetap Server Actions.
 
 ## Export PNG / PDF (F7)
 

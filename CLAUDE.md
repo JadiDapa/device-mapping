@@ -47,6 +47,8 @@ src/lib/{status.ts,auth.ts,env.ts,validators/,i18n/id.ts} · src/server/{actions
   `unique(zone_id, seq)` DEFERRABLE INITIALLY DEFERRED (custom SQL migration).
 - Ringkasan (count per status, router) dihitung di DB (`GROUP BY`), tidak pernah disimpan.
 - Setiap perubahan status (termasuk saat create) → 1 baris `device_status_history`.
+- Foto titik kamera (F9): disk lokal `UPLOADS_DIR` (volume Docker), dilayani `/api/uploads/*` hanya untuk user login;
+  unggah lewat Route Handler admin (pengecualian dari "mutasi = Server Actions"); simpan hanya kunci file di DB.
 - Leaflet hanya di client: `"use client"` + `dynamic(..., { ssr: false })`.
 - URL/attribution tile dari env `NEXT_PUBLIC_TILE_*`; attribution wajib tampil.
 - localStorage selalu dibungkus try/catch.

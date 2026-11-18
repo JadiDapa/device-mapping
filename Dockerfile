@@ -51,7 +51,9 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=deps /app/node_modules ./node_modules
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh && chown -R nextjs:nodejs /app
+RUN chmod +x ./docker-entrypoint.sh \
+    && mkdir -p /app/data/uploads \
+    && chown -R nextjs:nodejs /app
 
 # Chromium + its system libraries for export (F7). Installed as root into a
 # shared path before dropping privileges. Chromium cannot use its sandbox in a

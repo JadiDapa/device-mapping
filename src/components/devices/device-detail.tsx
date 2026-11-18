@@ -138,7 +138,11 @@ export function DeviceDetail({
               onSave={onSaveDetail}
             />
           ) : (
-            <ReadOnlyFields device={device} sources={sources} routers={routers} />
+            <ReadOnlyFields
+              device={device}
+              sources={sources}
+              routers={routers}
+            />
           )}
 
           <dl className="text-sm">

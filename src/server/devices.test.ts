@@ -14,6 +14,8 @@ import {
   createDevice,
   deleteDevice,
   DeviceNotFoundError,
+  getDevice,
+  InvalidParentError,
   listAllMapDevices,
   listDeviceHistory,
   listZoneDevices,
@@ -461,6 +463,73 @@ describe("devices data layer", () => {
       await expect(
         moveDevicePosition(t.db, NIL, { lat: 0, lng: 0 }, userId),
       ).rejects.toBeInstanceOf(DeviceNotFoundError);
+    });
+  });
+
+  describe("router chain (source -> router -> device)", () => {
+    const detail = (over: Record<string, unknown> = {}) => ({
+      deviceTypeId: typeId,
+      isRouter: false,
+      locationDetail: null,
+      notes: null,
+      networkSourceId: null,
+      parentDeviceId: null,
+      ...over,
+    });
+
+    it("links a device to a router in the same zone", async () => {
+      const r = await createDevice(t.db, input({ isRouter: true }), userId);
+      const d = await createDevice(
+        t.db,
+        input({ parentDeviceId: r.id }),
+        userId,
+      );
+      expect(d.parentDeviceId).toBe(r.id);
+    });
+
+    it("rejects a parent that is not a router or is in another zone", async () => {
+      const plain = await createDevice(t.db, input(), userId);
+      await expect(
+        createDevice(t.db, input({ parentDeviceId: plain.id }), userId),
+      ).rejects.toBeInstanceOf(InvalidParentError);
+      const other = await createDevice(
+        t.db,
+        input({ zoneId: zoneB, isRouter: true }),
+        userId,
+      );
+      await expect(
+        createDevice(t.db, input({ parentDeviceId: other.id }), userId),
+      ).rejects.toBeInstanceOf(InvalidParentError);
+    });
+
+    it("a router never keeps a parent", async () => {
+      const r1 = await createDevice(t.db, input({ isRouter: true }), userId);
+      const r2 = await createDevice(
+        t.db,
+        input({ isRouter: true, parentDeviceId: r1.id }),
+        userId,
+      );
+      expect(r2.parentDeviceId).toBeNull();
+    });
+
+    it("unlinks children when the router flag is removed or the router moves zone", async () => {
+      const r = await createDevice(t.db, input({ isRouter: true }), userId);
+      const c = await createDevice(
+        t.db,
+        input({ parentDeviceId: r.id }),
+        userId,
+      );
+      await updateDevice(t.db, r.id, detail({ isRouter: false }), userId);
+      expect((await getDevice(t.db, c.id))?.parentDeviceId).toBeNull();
+
+      const r2 = await createDevice(t.db, input({ isRouter: true }), userId);
+      const c2 = await createDevice(
+        t.db,
+        input({ parentDeviceId: r2.id }),
+        userId,
+      );
+      await moveDeviceToZone(t.db, r2.id, zoneB, userId);
+      expect((await getDevice(t.db, c2.id))?.parentDeviceId).toBeNull();
     });
   });
 

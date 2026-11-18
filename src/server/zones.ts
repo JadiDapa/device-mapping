@@ -9,6 +9,7 @@ import { devices, zones } from "@/db/schema";
 import { polygonCenter } from "@/lib/geo";
 import type { DeviceStatus } from "@/lib/status";
 import type { ZoneInput } from "@/lib/validators/zone";
+import { hasPgCode } from "./pg";
 
 export class ZoneNameTakenError extends Error {
   constructor() {
@@ -42,17 +43,6 @@ export type ZoneSummary = {
   counts: Record<DeviceStatus, number>;
 };
 
-function hasPgCode(error: unknown, code: string): boolean {
-  let e: unknown = error;
-  for (let i = 0; i < 4 && e; i++) {
-    if (typeof e === "object" && (e as { code?: unknown }).code === code) {
-      return true;
-    }
-    e = (e as { cause?: unknown }).cause;
-  }
-  return false;
-}
-
 function centerColumns(boundary: ZoneInput["boundary"]) {
   if (!boundary) return { centerLat: null, centerLng: null };
   const c = polygonCenter(boundary);
@@ -63,7 +53,10 @@ function centerColumns(boundary: ZoneInput["boundary"]) {
  * Per-zone totals computed in the database (GROUP BY) — never stored.
  * Zones without devices come back with zeros (LEFT JOIN).
  */
-export async function listZoneSummaries(db: Database): Promise<ZoneSummary[]> {
+export async function listZoneSummaries(
+  db: Database,
+  onlyZoneId?: string,
+): Promise<ZoneSummary[]> {
   const rows = await db
     .select({
       id: zones.id,
@@ -78,6 +71,7 @@ export async function listZoneSummaries(db: Database): Promise<ZoneSummary[]> {
     })
     .from(zones)
     .leftJoin(devices, eq(devices.zoneId, zones.id))
+    .where(onlyZoneId ? eq(zones.id, onlyZoneId) : undefined)
     .groupBy(zones.id)
     .orderBy(asc(zones.name));
 
@@ -94,6 +88,14 @@ export async function listZoneSummaries(db: Database): Promise<ZoneSummary[]> {
       tested: r.tested,
     },
   }));
+}
+
+/** Summary of one zone (same GROUP BY query as the dashboard). */
+export async function getZoneSummary(
+  db: Database,
+  zoneId: string,
+): Promise<ZoneSummary | null> {
+  return (await listZoneSummaries(db, zoneId))[0] ?? null;
 }
 
 export async function getZone(db: Database, id: string): Promise<Zone | null> {

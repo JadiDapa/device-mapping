@@ -30,7 +30,6 @@
     "@turf/boolean-point-in-polygon": "7.4.0",
     "@turf/center": "7.4.0",
     "better-auth": "1.7.25",
-    "better-sqlite3": "13.1.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "date-fns": "4.4.0",
@@ -54,7 +53,6 @@
   "devDependencies": {
     "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "4.3.5",
-    "@types/better-sqlite3": "9.6.0",
     "@types/leaflet": "1.9.22",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",

@@ -1,23 +1,45 @@
 services:
+  db:
+    image: postgres:18-alpine
+    # Host port 5433 so it doesn't clash with a Postgres already on 5432.
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=device-mapper
+    volumes:
+      # Postgres 18+ images keep data under /var/lib/postgresql/<major>.
+      - pgdata:/var/lib/postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d device-mapper"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Full-stack container. Dev normally runs `npm run dev` against the `db`
+  # service only; start this one with `docker compose --profile app up`.
   app:
+    profiles: ["app"]
     build: .
     ports:
       - "3000:3000"
-    volumes:
-      - ./data:/app/data # app.db + uploads/
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      - DATABASE_PATH=/app/data/app.db
-      - UPLOAD_DIR=/app/data/uploads
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/device-mapper
       - BETTER_AUTH_SECRET=change-me-32-chars-min-please-change
-      # BETTER_AUTH_URL is intentionally unset: lib/auth.ts resolves the
+      # BETTER_AUTH_URL is intentionally unset: src/lib/auth.ts resolves the
       # base URL dynamically per request from allowedHosts (localhost,
       # 192.168.*.*, 10.*.*.*, 172.16.*.*), so phone access over the LAN
       # works without editing this file for your PC's IP. Set it to pin
       # one exact origin instead, if you prefer.
       - TRUSTED_ORIGINS=http://localhost:3000
-      - ADMIN_EMAIL=admin@example.com
-      - ADMIN_PASSWORD=change-me
-      - TZ=UTC
+      - SEED_ADMIN_EMAIL=admin@example.com
+      - SEED_ADMIN_PASSWORD=change-me
+      - TZ=Asia/Jakarta
     restart: unless-stopped
     healthcheck:
       test:
@@ -28,3 +50,6 @@ services:
           "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 30s
+
+volumes:
+  pgdata:

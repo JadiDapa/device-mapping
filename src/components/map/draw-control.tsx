@@ -122,7 +122,7 @@ export function DrawControl({
   }
 
   return (
-    <div className="absolute top-3 left-3 z-[1000] flex flex-wrap gap-2">
+    <div className="absolute top-3 right-3 z-[1000] flex flex-wrap gap-2">
       <Button
         type="button"
         size="sm"

@@ -41,9 +41,11 @@ export function LoginForm() {
 
     if (error) {
       setServerError(
-        error.status === 401 || error.status === 400
-          ? id.auth.invalidCredentials
-          : id.auth.genericError,
+        error.code === "BANNED_USER"
+          ? id.auth.banned
+          : error.status === 401 || error.status === 400
+            ? id.auth.invalidCredentials
+            : id.auth.genericError,
       );
       return;
     }

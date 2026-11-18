@@ -10,6 +10,12 @@ import {
 import { DeviceNotFoundError, ReorderMismatchError } from "@/server/devices";
 import { NetworkSourceNotFoundError } from "@/server/network-sources";
 import {
+  LastAdminError,
+  SelfModifyError,
+  UserEmailTakenError,
+  UserNotFoundError,
+} from "@/server/users";
+import {
   ZoneConfirmMismatchError,
   ZoneNameTakenError,
   ZoneNotFoundError,
@@ -104,6 +110,23 @@ export async function runAction<T>(
     }
     if (error instanceof ReorderMismatchError) {
       return { ok: false, status: 409, error: id.device.reorderMismatch };
+    }
+    if (error instanceof UserEmailTakenError) {
+      return {
+        ok: false,
+        status: 409,
+        error: id.users.emailTaken,
+        fieldErrors: { email: [id.users.emailTaken] },
+      };
+    }
+    if (error instanceof UserNotFoundError) {
+      return { ok: false, status: 404, error: id.users.notFound };
+    }
+    if (error instanceof SelfModifyError) {
+      return { ok: false, status: 422, error: id.users.selfModify };
+    }
+    if (error instanceof LastAdminError) {
+      return { ok: false, status: 422, error: id.users.lastAdmin };
     }
     console.error(error);
     return { ok: false, status: 500, error: id.common.genericError };

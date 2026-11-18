@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { PencilIcon } from "lucide-react";
 import { toast } from "sonner";
 import { CameraGallery } from "@/components/camera/camera-gallery";
+import { CameraZipButton } from "@/components/camera/camera-zip-button";
 import { CameraPointPanel } from "@/components/camera/camera-point-panel";
 import type { CameraPointView } from "@/components/camera/types";
 import { useCameraPoints } from "@/components/camera/use-camera-points";
@@ -689,6 +690,16 @@ export function ZoneWorkspace({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {isAdmin && (
+            <CameraZipButton
+              zoneId={zone.id}
+              zoneName={zone.name}
+              photoCount={cameras.points.reduce(
+                (n, p) => n + p.images.length,
+                0,
+              )}
+            />
+          )}
           <ExportPngButton zoneId={zone.id} zoneName={zone.name} />
           {isAdmin && (
             <Button asChild variant="outline" size="sm">

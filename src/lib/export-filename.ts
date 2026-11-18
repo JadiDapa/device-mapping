@@ -23,6 +23,11 @@ export function pngFilename(zoneName: string, date: Date = new Date()): string {
   return `${sanitizeFilenamePart(zoneName)}_${wibDateStamp(date)}.png`;
 }
 
+/** `<zona>_foto-kamera_<YYYY-MM-DD>.zip` (camera photos, F9) */
+export function zipFilename(zoneName: string, date: Date = new Date()): string {
+  return `${sanitizeFilenamePart(zoneName)}_foto-kamera_${wibDateStamp(date)}.zip`;
+}
+
 /** `Rekap_Instalasi_<YYYY-MM-DD>.pdf` */
 export function pdfFilename(date: Date = new Date()): string {
   return `Rekap_Instalasi_${wibDateStamp(date)}.pdf`;

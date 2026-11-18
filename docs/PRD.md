@@ -321,6 +321,7 @@ Membantu pemetaan 3D: menandai dari titik mana foto area diambil, dengan banyak 
 - Foto dikompres di browser (sisi terpanjang 2560 px, WebP; thumbnail 400 px, EXIF dibuang); server memvalidasi ulang tipe (magic bytes) dan ukuran.
 - Semua user (admin & guest): marker kamera + badge jumlah foto; klik marker → popover berisi nama + thumbnail + "Lihat semua"; klik thumbnail → galeri fullscreen (tombol, panah keyboard, swipe, strip thumbnail semua foto titik itu).
 - Toggle "Titik kamera" di toolbar (tersimpan).
+- Admin: "Unduh foto (ZIP)" di header zona → semua foto zona dalam satu ZIP: `<zona>/<NN>_<titik>/<NN>_<titik>_<III>_<lat>_<lng>.<ext>` (NN = urutan titik, III = urutan foto, koordinat 5 desimal) + `<zona>/manifest.csv` (file, titik, lat, lng, nomor foto, keterangan, ukuran). `GET /api/export/camera-zip?zone=<id>`, admin saja (guest 403, anonim 401), di-stream satu foto per waktu.
 - Guest memanggil mutasi → 403. File hanya bisa diakses user yang login (`/api/uploads/...`).
 - Penyimpanan: disk lokal `UPLOADS_DIR` (volume Docker). Upload lewat Route Handler (bukan Server Action) agar tidak terkena batas 1 MB dan bisa menampilkan progres.
 - Tidak termasuk: export PNG/PDF, peta semua zona, resolusi asli, S3.

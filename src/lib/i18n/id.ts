@@ -384,6 +384,8 @@ export const id = {
     closeGallery: "Tutup galeri",
     loadFailed: "Foto gagal dimuat.",
     popoverLabel: "Foto titik kamera",
+    zipDownload: "Unduh foto (ZIP)",
+    zipEmpty: "Belum ada foto di zona ini.",
   },
   allMap: {
     title: "Peta semua zona",

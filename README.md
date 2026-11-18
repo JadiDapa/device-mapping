@@ -123,6 +123,9 @@ migrasi, seed admin, lalu `node server.js`.
   **Backup = backup database + volume `uploads`.** Di Docker, volume `uploads` dipasang di
   `/app/data/uploads`.
 - Foto dikompres di browser sebelum diunggah (maks. 2560 px, WebP). Resolusi asli tidak disimpan.
+- **Unduh semua foto satu zona (admin):** tombol "Unduh foto (ZIP)" di header zona (`GET /api/export/camera-zip?zone=<id>`).
+  Isi: `<zona>/<NN>_<titik>/<NN>_<titik>_<III>_<lat>_<lng>.<ext>` dan `<zona>/manifest.csv`. ZIP ditulis tanpa
+  kompresi (foto sudah terkompres) dan di-stream, tanpa dependensi tambahan.
 - File dilayani `GET /api/uploads/<kunci>` hanya untuk user yang login (401 bila tidak).
 - **Penyimpangan dari "mutasi = Server Actions":** unggah foto memakai Route Handler
   `POST /api/camera-points/<id>/images` (admin saja) karena Server Action dibatasi 1 MB dan tidak bisa

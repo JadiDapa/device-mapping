@@ -6,7 +6,15 @@
  * so a hostile key can never escape it.
  */
 import { createReadStream } from "node:fs";
-import { mkdir, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { getEnv } from "@/lib/env";
@@ -84,6 +92,20 @@ export async function deleteFiles(
       }
     }),
   );
+}
+
+/** Whole file as bytes, or null when the key is unsafe or the file is gone. */
+export async function readFileBytes(
+  key: string,
+  base?: string,
+): Promise<Buffer | null> {
+  const full = resolveKey(key, base);
+  if (!full) return null;
+  try {
+    return await readFile(full);
+  } catch {
+    return null;
+  }
 }
 
 export async function openFile(

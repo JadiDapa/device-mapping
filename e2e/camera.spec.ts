@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { createZone, deleteZone, login } from "./helpers";
@@ -95,6 +96,22 @@ test("admin: camera point -> upload -> caption/reorder -> gallery", async ({
   });
   expect(res.status()).toBe(401);
   await anon.close();
+
+  // ZIP of every photo: folder per point, coordinates in the file name, manifest.
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Unduh foto (ZIP)" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(
+    /_foto-kamera_\d{4}-\d{2}-\d{2}\.zip$/,
+  );
+  const zip = readFileSync((await download.path())!).toString("latin1");
+  expect(zip.startsWith("PK")).toBe(true);
+  expect(zip).toContain("manifest.csv");
+  expect(zip).toMatch(
+    /01_Lobby-Utara\/01_Lobby-Utara_001_-?\d+\.\d{5}_-?\d+\.\d{5}\.webp/,
+  );
+  expect(zip).toContain("01_Lobby-Utara_003_");
 
   await deleteZone(page, zoneName);
 });

@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data # app.db + uploads/
+    environment:
+      - DATABASE_PATH=/app/data/app.db
+      - UPLOAD_DIR=/app/data/uploads
+      - BETTER_AUTH_SECRET=change-me-32-chars-min-please-change
+      # BETTER_AUTH_URL is intentionally unset: lib/auth.ts resolves the
+      # base URL dynamically per request from allowedHosts (localhost,
+      # 192.168.*.*, 10.*.*.*, 172.16.*.*), so phone access over the LAN
+      # works without editing this file for your PC's IP. Set it to pin
+      # one exact origin instead, if you prefer.
+      - TRUSTED_ORIGINS=http://localhost:3000
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=change-me
+      - TZ=UTC
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s

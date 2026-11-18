@@ -1,0 +1,23 @@
+# deps
+node_modules/
+
+# next
+.next/
+next-env.d.ts
+out/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+
+# data (sqlite + uploads volume)
+data/
+
+# test / coverage
+coverage/
+
+# misc
+*.log
+.DS_Store
+Thumbs.db

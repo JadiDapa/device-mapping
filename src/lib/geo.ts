@@ -1,4 +1,5 @@
 import bbox from "@turf/bbox";
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import center from "@turf/center";
 import type { GeoJsonPolygon } from "@/db/schema";
 
@@ -14,6 +15,18 @@ export function polygonCenter(polygon: GeoJsonPolygon): {
   });
   const [lng, lat] = feature.geometry.coordinates as [number, number];
   return { lat, lng };
+}
+
+/**
+ * Whether a point lies inside the zone polygon. A zone without a boundary
+ * has nothing to be outside of, so it never triggers the out-of-zone warning.
+ */
+export function isPointInZone(
+  point: { lat: number; lng: number },
+  boundary: GeoJsonPolygon | null,
+): boolean {
+  if (!boundary) return true;
+  return booleanPointInPolygon([point.lng, point.lat], boundary);
 }
 
 /** Leaflet-style bounds `[[south, west], [north, east]]`. */

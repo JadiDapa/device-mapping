@@ -100,3 +100,13 @@ export async function requireUser(options?: { redirectTo?: string }) {
 export async function requireAdmin() {
   return assertRole(await getSession(), "admin");
 }
+
+/**
+ * For admin-only PAGES: no session => /login, signed in but not admin => /.
+ * (Server Actions still enforce requireAdmin() themselves.)
+ */
+export async function requireAdminPage() {
+  const session = await requireUser({ redirectTo: "/login" });
+  if (session.user.role !== "admin") redirect("/");
+  return session;
+}

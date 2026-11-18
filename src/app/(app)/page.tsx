@@ -1,24 +1,42 @@
+import Link from "next/link";
+import { PlusIcon } from "lucide-react";
+import { getDb } from "@/db";
+import { Button } from "@/components/ui/button";
+import { ZoneCard } from "@/components/zones/zone-card";
 import { requireUser } from "@/lib/auth";
 import { id } from "@/lib/i18n/id";
-import { SignOutButton } from "./sign-out-button";
+import { listZoneSummaries } from "@/server/zones";
 
-// Placeholder: replaced by the zone dashboard in M2.
 export default async function DashboardPage() {
   const session = await requireUser({ redirectTo: "/login" });
-  const role = session.user.role === "admin" ? "admin" : "guest";
+  const isAdmin = session.user.role === "admin";
+  const zones = await listZoneSummaries(getDb());
 
   return (
-    <main className="mx-auto max-w-xl p-6">
-      <h1 className="text-2xl font-semibold">{id.admin.dashboardTitle}</h1>
-      <p className="text-muted-foreground mt-2">
-        {id.admin.signedInAs}: {session.user.email}
-      </p>
-      <p className="text-muted-foreground mt-1" data-testid="user-role">
-        {id.admin.role}: {id.role[role]}
-      </p>
-      <div className="mt-6">
-        <SignOutButton />
+    <main className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">{id.dashboard.title}</h1>
+        {isAdmin && (
+          <Button asChild>
+            <Link href="/zones/new">
+              <PlusIcon />
+              {id.dashboard.newZone}
+            </Link>
+          </Button>
+        )}
       </div>
+
+      {zones.length === 0 ? (
+        <p className="text-muted-foreground py-12 text-center">
+          {isAdmin ? id.dashboard.emptyAdmin : id.dashboard.empty}
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {zones.map((zone) => (
+            <ZoneCard key={zone.id} zone={zone} />
+          ))}
+        </div>
+      )}
     </main>
   );
 }

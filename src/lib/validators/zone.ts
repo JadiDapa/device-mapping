@@ -12,7 +12,7 @@ export const zoneFormSchema = z.object({
     .string()
     .trim()
     .max(1000, id.zone.descriptionTooLong)
-    .optional()
+    .nullish()
     .transform((v) => (v ? v : null)),
 });
 

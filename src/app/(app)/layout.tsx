@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { id } from "@/lib/i18n/id";
+import { SignOutButton } from "./sign-out-button";
 
 // Everything in this group depends on the session cookie, so it must never be
 // statically prerendered — static generation runs at build time, before any
@@ -14,7 +17,26 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireUser({ redirectTo: "/login" });
+  const session = await requireUser({ redirectTo: "/login" });
+  const role = session.user.role === "admin" ? "admin" : "guest";
 
-  return <div className="min-h-screen">{children}</div>;
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <header className="bg-background flex h-14 shrink-0 items-center gap-4 border-b px-4">
+        <Link href="/" className="font-semibold">
+          {id.app.title}
+        </Link>
+        <div className="ml-auto flex items-center gap-3">
+          <div className="hidden text-right text-xs leading-tight sm:block">
+            <div>{session.user.email}</div>
+            <div className="text-muted-foreground" data-testid="user-role">
+              {id.role[role]}
+            </div>
+          </div>
+          <SignOutButton />
+        </div>
+      </header>
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+    </div>
+  );
 }

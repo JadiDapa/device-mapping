@@ -1,21 +1,37 @@
 import { z } from "zod";
 
 /**
- * Validated environment.
+ * Validated server environment.
  * Fail fast with a readable message rather than let a
  * misconfigured container boot into a broken state.
+ *
+ * SEED_ADMIN_* are optional here: only the seed script requires them.
  */
 export const envSchema = z
   .object({
-    DATABASE_PATH: z.string().min(1).default("./data/app.db"),
-    UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
+    DATABASE_URL: z
+      .url("DATABASE_URL must be a valid URL")
+      .refine(
+        (value) => /^postgres(ql)?:\/\//.test(value),
+        "DATABASE_URL must start with postgres:// or postgresql://",
+      ),
     BETTER_AUTH_SECRET: z
       .string()
       .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+    BETTER_AUTH_URL: z
+      .url("BETTER_AUTH_URL must be a valid URL")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
     TRUSTED_ORIGINS: z.string().optional().default(""),
-    ADMIN_EMAIL: z.string().email("ADMIN_EMAIL must be a valid email address"),
-    ADMIN_PASSWORD: z.string().min(1, "ADMIN_PASSWORD is required"),
-    TZ: z.string().optional().default("UTC"),
+    SEED_ADMIN_EMAIL: z
+      .email("SEED_ADMIN_EMAIL must be a valid email address")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    SEED_ADMIN_PASSWORD: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    TZ: z.string().optional().default("Asia/Jakarta"),
   })
   .transform((env) => ({
     ...env,

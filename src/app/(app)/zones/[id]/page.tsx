@@ -5,27 +5,43 @@ import { ZoneWorkspace } from "@/components/devices/zone-workspace";
 import { requireUser } from "@/lib/auth";
 import { listDeviceTypes } from "@/server/device-types";
 import { listZoneDevices } from "@/server/devices";
+import {
+  listForeignSourceDevices,
+  listSourceKinds,
+  listSourcesForZone,
+} from "@/server/network-sources";
 import { getZone, getZoneSummary, listZoneOptions } from "@/server/zones";
 
 export default async function ZonePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ device?: string }>;
 }) {
   const session = await requireUser({ redirectTo: "/login" });
   const { id: zoneId } = await params;
+  const { device: deviceParam } = await searchParams;
   if (!z.string().uuid().safeParse(zoneId).success) notFound();
 
   const db = getDb();
   const zone = await getZone(db, zoneId);
   if (!zone) notFound();
 
-  const [devices, types, summary, zoneOptions] = await Promise.all([
-    listZoneDevices(db, zoneId),
-    listDeviceTypes(db),
-    getZoneSummary(db, zoneId),
-    listZoneOptions(db),
-  ]);
+  const [devices, types, summary, zoneOptions, sources, sourceKinds] =
+    await Promise.all([
+      listZoneDevices(db, zoneId),
+      listDeviceTypes(db),
+      getZoneSummary(db, zoneId),
+      listZoneOptions(db),
+      listSourcesForZone(db, zoneId),
+      listSourceKinds(db),
+    ]);
+  const foreignSourceDevices = await listForeignSourceDevices(
+    db,
+    zoneId,
+    sources.map((x) => x.id),
+  );
 
   const center =
     zone.centerLat != null && zone.centerLng != null
@@ -58,6 +74,12 @@ export default async function ZonePage({
           }
         }
         otherZones={zoneOptions.filter((z) => z.id !== zone.id)}
+        sources={sources}
+        sourceKinds={sourceKinds}
+        foreignSourceDevices={foreignSourceDevices}
+        initialDeviceId={
+          z.string().uuid().safeParse(deviceParam).success ? deviceParam : null
+        }
         isAdmin={session.user.role === "admin"}
       />
     </main>

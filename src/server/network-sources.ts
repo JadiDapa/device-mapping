@@ -3,7 +3,7 @@
  * authorization and revalidation live in src/server/actions/sources.ts.
  * Deleting a source detaches its devices (FK `on delete set null`).
  */
-import { asc, eq, or, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { Database } from "@/db";
 import { devices, deviceTypes, networkSources, zones } from "@/db/schema";
 import type { NetworkSourceInput } from "@/lib/validators/network-source";
@@ -197,4 +197,38 @@ export async function deleteNetworkSource(
     .returning();
   if (!row) throw new NetworkSourceNotFoundError();
   return row;
+}
+
+/**
+ * Devices connected to any of `sourceIds` that live OUTSIDE `zoneId` (the
+ * zone page already has its own devices live), for the source detail panel.
+ */
+export async function listForeignSourceDevices(
+  db: Database,
+  zoneId: string,
+  sourceIds: string[],
+): Promise<(SourceDevice & { networkSourceId: string })[]> {
+  if (sourceIds.length === 0) return [];
+  const rows = await db
+    .select({
+      id: devices.id,
+      seq: devices.seq,
+      zoneId: devices.zoneId,
+      zoneName: zones.name,
+      typeName: deviceTypes.name,
+      status: devices.status,
+      locationDetail: devices.locationDetail,
+      networkSourceId: devices.networkSourceId,
+    })
+    .from(devices)
+    .innerJoin(zones, eq(zones.id, devices.zoneId))
+    .innerJoin(deviceTypes, eq(deviceTypes.id, devices.deviceTypeId))
+    .where(
+      and(
+        inArray(devices.networkSourceId, sourceIds),
+        ne(devices.zoneId, zoneId),
+      ),
+    )
+    .orderBy(asc(zones.name), asc(devices.seq));
+  return rows.map((r) => ({ ...r, networkSourceId: r.networkSourceId! }));
 }

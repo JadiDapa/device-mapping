@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVerticalIcon, PlusIcon } from "lucide-react";
+import { GripVerticalIcon, NetworkIcon, PlusIcon } from "lucide-react";
 import { useMapStore } from "@/components/map/map-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ type Props = {
   onReorder: (orderedIds: string[]) => void;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onAddSource: () => void;
 };
 
 export function DeviceSidebar({
@@ -49,6 +50,7 @@ export function DeviceSidebar({
   onReorder,
   onSelect,
   onAdd,
+  onAddSource,
 }: Props) {
   const filters = useMapStore((s) => s.filters);
   const selectedId = useMapStore((s) => s.selectedId);
@@ -95,10 +97,21 @@ export function DeviceSidebar({
             </span>
           </h2>
           {isAdmin && (
-            <Button size="sm" onClick={onAdd} className="md:hidden">
-              <PlusIcon />
-              {id.device.add}
-            </Button>
+            <div className="flex gap-2 md:hidden">
+              <Button size="sm" onClick={onAdd}>
+                <PlusIcon />
+                {id.device.add}
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={onAddSource}
+                aria-label={id.source.add}
+                title={id.source.add}
+              >
+                <NetworkIcon />
+              </Button>
+            </div>
           )}
         </div>
         <DeviceFilters types={types} />

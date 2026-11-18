@@ -33,25 +33,30 @@ export const safeStorage: StateStorage = {
   },
 };
 
-export type MapMode = "idle" | "addDevice";
+export type MapMode = "idle" | "addDevice" | "addSource";
 
 type MapState = {
   mode: MapMode;
   selectedId: string | null;
+  /** A device and a source are never selected at the same time. */
+  selectedSourceId: string | null;
   filters: DeviceFilters;
   /** Bumped to ask the map to fly to the selected device (sidebar click). */
   flyToken: number;
   // Persisted display toggles (PRD F4).
   showLocation: boolean;
   showTypeIcon: boolean;
+  showConnections: boolean;
   legendOpen: boolean;
 
   setMode: (mode: MapMode) => void;
   select: (id: string | null, opts?: { fly?: boolean }) => void;
+  selectSource: (id: string | null, opts?: { fly?: boolean }) => void;
   setFilters: (patch: Partial<DeviceFilters>) => void;
   resetFilters: () => void;
   setShowLocation: (v: boolean) => void;
   setShowTypeIcon: (v: boolean) => void;
+  setShowConnections: (v: boolean) => void;
   setLegendOpen: (v: boolean) => void;
   /** Per-zone UI state (mode, selection, filters) when entering a zone. */
   resetZoneState: () => void;
@@ -62,16 +67,25 @@ export const useMapStore = create<MapState>()(
     (set) => ({
       mode: "idle",
       selectedId: null,
+      selectedSourceId: null,
       filters: EMPTY_FILTERS,
       flyToken: 0,
       showLocation: false,
       showTypeIcon: false,
+      showConnections: false,
       legendOpen: true,
 
       setMode: (mode) => set({ mode }),
       select: (selectedId, opts) =>
         set((s) => ({
           selectedId,
+          selectedSourceId: selectedId ? null : s.selectedSourceId,
+          flyToken: opts?.fly ? s.flyToken + 1 : s.flyToken,
+        })),
+      selectSource: (selectedSourceId, opts) =>
+        set((s) => ({
+          selectedSourceId,
+          selectedId: selectedSourceId ? null : s.selectedId,
           flyToken: opts?.fly ? s.flyToken + 1 : s.flyToken,
         })),
       setFilters: (patch) =>
@@ -79,9 +93,15 @@ export const useMapStore = create<MapState>()(
       resetFilters: () => set({ filters: EMPTY_FILTERS }),
       setShowLocation: (showLocation) => set({ showLocation }),
       setShowTypeIcon: (showTypeIcon) => set({ showTypeIcon }),
+      setShowConnections: (showConnections) => set({ showConnections }),
       setLegendOpen: (legendOpen) => set({ legendOpen }),
       resetZoneState: () =>
-        set({ mode: "idle", selectedId: null, filters: EMPTY_FILTERS }),
+        set({
+          mode: "idle",
+          selectedId: null,
+          selectedSourceId: null,
+          filters: EMPTY_FILTERS,
+        }),
     }),
     {
       name: "device-mapper:map-view",
@@ -89,6 +109,7 @@ export const useMapStore = create<MapState>()(
       partialize: (s) => ({
         showLocation: s.showLocation,
         showTypeIcon: s.showTypeIcon,
+        showConnections: s.showConnections,
         legendOpen: s.legendOpen,
       }),
       // Rehydrate after mount (see ZoneWorkspace) so SSR and the first client

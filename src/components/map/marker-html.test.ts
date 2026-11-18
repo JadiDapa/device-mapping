@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { statusColor } from "@/lib/status";
-import { buildMarkerHtml, type MarkerHtmlInput } from "./marker-html";
+import {
+  buildMarkerHtml,
+  buildSourceMarkerHtml,
+  type MarkerHtmlInput,
+} from "./marker-html";
 
 const base: MarkerHtmlInput = {
   seq: 7,
@@ -65,5 +69,28 @@ describe("buildMarkerHtml", () => {
       "device-marker--selected",
     );
     expect(buildMarkerHtml(base)).not.toContain("device-marker--selected");
+  });
+});
+
+describe("buildSourceMarkerHtml", () => {
+  it("always shows the (escaped) name and uses the source shape", () => {
+    const html = buildSourceMarkerHtml({
+      name: "<Shelter> & Co",
+      selected: false,
+    });
+    expect(html).toContain("source-marker__box");
+    expect(html).toContain("&lt;Shelter&gt; &amp; Co");
+    expect(html).not.toContain("<Shelter>");
+    expect(html).not.toContain("device-marker");
+    expect(html).toContain("<svg");
+  });
+
+  it("marks the selected source", () => {
+    expect(buildSourceMarkerHtml({ name: "S", selected: true })).toContain(
+      "source-marker--selected",
+    );
+    expect(buildSourceMarkerHtml({ name: "S", selected: false })).not.toContain(
+      "source-marker--selected",
+    );
   });
 });

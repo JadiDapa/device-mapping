@@ -39,11 +39,13 @@ import type { ZoneDevice } from "@/server/devices";
 import { DeviceHistory } from "./device-history";
 import type { TypeOption } from "./device-form";
 import { SeqBadge } from "./seq-badge";
+import { SourceSelect, type SourceOption } from "./source-select";
 import { StatusSelector } from "./status-selector";
 
 type Props = {
   device: ZoneDevice;
   types: TypeOption[];
+  sources: SourceOption[];
   otherZones: { id: string; name: string }[];
   isAdmin: boolean;
   onBack: () => void;
@@ -56,6 +58,7 @@ type Props = {
 export function DeviceDetail({
   device,
   types,
+  sources,
   otherZones,
   isAdmin,
   onBack,
@@ -127,10 +130,11 @@ export function DeviceDetail({
               key={`${device.id}:${device.updatedAt.getTime()}`}
               device={device}
               types={types}
+              sources={sources}
               onSave={onSaveDetail}
             />
           ) : (
-            <ReadOnlyFields device={device} />
+            <ReadOnlyFields device={device} sources={sources} />
           )}
 
           <dl className="text-sm">
@@ -161,12 +165,23 @@ export function DeviceDetail({
   );
 }
 
-function ReadOnlyFields({ device }: { device: ZoneDevice }) {
+function ReadOnlyFields({
+  device,
+  sources,
+}: {
+  device: ZoneDevice;
+  sources: SourceOption[];
+}) {
+  const source = sources.find((s) => s.id === device.networkSourceId);
   return (
     <dl className="space-y-3 text-sm">
       <div>
         <dt className="text-muted-foreground">{id.device.locationDetail}</dt>
         <dd>{device.locationDetail ?? id.device.noLocation}</dd>
+      </div>
+      <div>
+        <dt className="text-muted-foreground">{id.source.deviceField}</dt>
+        <dd>{source ? `${source.name} (${source.kind})` : "—"}</dd>
       </div>
       <div>
         <dt className="text-muted-foreground">{id.device.notes}</dt>
@@ -179,13 +194,15 @@ function ReadOnlyFields({ device }: { device: ZoneDevice }) {
 function EditForm({
   device,
   types,
+  sources,
   onSave,
 }: {
   device: ZoneDevice;
   types: TypeOption[];
+  sources: SourceOption[];
   onSave: (input: DeviceUpdateInput) => Promise<boolean>;
 }) {
-  const { control, handleSubmit, formState } = useForm<
+  const { control, handleSubmit, formState, watch, setValue } = useForm<
     DeviceUpdateValues,
     unknown,
     DeviceUpdateInput
@@ -196,6 +213,7 @@ function EditForm({
       isRouter: device.isRouter,
       locationDetail: device.locationDetail ?? "",
       notes: device.notes ?? "",
+      networkSourceId: device.networkSourceId ?? "",
     },
   });
 
@@ -283,6 +301,15 @@ function EditForm({
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
+        />
+        <SourceSelect
+          htmlId="edit-device-source"
+          value={watch("networkSourceId")}
+          onChange={(v) =>
+            setValue("networkSourceId", v, { shouldDirty: true })
+          }
+          sources={sources}
+          zoneId={device.zoneId}
         />
       </FieldGroup>
       <Button type="submit" disabled={formState.isSubmitting}>

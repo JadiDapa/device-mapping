@@ -33,6 +33,8 @@
   --map-label-bg: rgb(15 23 42 / 0.75);
   --map-label-fg: #ffffff;
   --map-source-bg: #2563eb;
+  --map-source-fg: #ffffff;
+  --map-connection: #38bdf8;
 }
 
 .dark {
@@ -193,4 +195,67 @@
   line-height: 1;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
+}
+
+/* Network source markers: rounded square (devices are round) + name label
+   that is always visible. */
+.leaflet-div-icon.source-marker-icon {
+  background: transparent;
+  border: 0;
+}
+.source-marker {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+.source-marker__box {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 2px solid var(--map-marker-border);
+  background: var(--map-source-bg);
+  color: var(--map-source-fg);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.source-marker--selected .source-marker__box {
+  box-shadow:
+    0 0 0 3px var(--map-marker-ring),
+    0 1px 4px rgb(0 0 0 / 0.5);
+}
+.source-marker__label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 4px;
+  max-width: 160px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 4px;
+  background: var(--map-source-bg);
+  color: var(--map-source-fg);
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+/* Device -> network source connection line (off by default). */
+.connection-line {
+  stroke: var(--map-connection);
+  stroke-width: 2px;
+  stroke-dasharray: 6 5;
+  stroke-opacity: 0.9;
+  fill: none;
+}
+
+/* Legend swatch for the network source marker. */
+.legend-source {
+  background: var(--map-source-bg);
+  color: var(--map-source-fg);
 }

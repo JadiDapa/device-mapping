@@ -16,6 +16,11 @@ import { Legend } from "@/components/map/legend";
 import { MapToolbar } from "@/components/map/map-toolbar";
 import { useMapStore } from "@/components/map/map-store";
 import { SummaryBox } from "@/components/map/summary-box";
+import {
+  SourceDetail,
+  type SourceDeviceItem,
+} from "@/components/sources/source-detail";
+import { SourceForm } from "@/components/sources/source-form";
 import { Button } from "@/components/ui/button";
 import type { GeoJsonPolygon } from "@/db/schema";
 import { filterDevices } from "@/lib/device-filter";
@@ -34,7 +39,12 @@ import {
   setDeviceStatusAction,
   updateDeviceAction,
 } from "@/server/actions/devices";
+import {
+  deleteNetworkSourceAction,
+  moveNetworkSourcePositionAction,
+} from "@/server/actions/sources";
 import type { ZoneDevice } from "@/server/devices";
+import type { NetworkSource, SourceDevice } from "@/server/network-sources";
 import { DeviceDetail } from "./device-detail";
 import { DeviceForm } from "./device-form";
 import { DeviceSidebar } from "./device-sidebar";
@@ -56,6 +66,14 @@ type Props = {
     counts: Record<DeviceStatus, number>;
   };
   otherZones: { id: string; name: string }[];
+  /** Sources shown on this zone's map (own, zone-less, linked). */
+  sources: NetworkSource[];
+  /** Distinct source kinds, for the form's autocomplete. */
+  sourceKinds: string[];
+  /** Devices of OTHER zones connected to this zone's sources. */
+  foreignSourceDevices: (SourceDevice & { networkSourceId: string })[];
+  /** Device to select on arrival (`?device=` from the all-zones map). */
+  initialDeviceId?: string | null;
   isAdmin: boolean;
 };
 
@@ -63,6 +81,16 @@ type Op =
   | { type: "patch"; id: string; patch: Partial<ZoneDevice> }
   | { type: "reorder"; ids: string[] }
   | { type: "remove"; id: string };
+
+type SourceOp =
+  | { type: "patch"; id: string; patch: Partial<NetworkSource> }
+  | { type: "remove"; id: string };
+
+function reduceSources(state: NetworkSource[], op: SourceOp): NetworkSource[] {
+  return op.type === "remove"
+    ? state.filter((x) => x.id !== op.id)
+    : state.map((x) => (x.id === op.id ? { ...x, ...op.patch } : x));
+}
 
 /** Optimistic view of the zone's devices while a Server Action is running. */
 function reduce(state: ZoneDevice[], op: Op): ZoneDevice[] {
@@ -89,16 +117,31 @@ export function ZoneWorkspace({
   types,
   summary,
   otherZones,
+  sources,
+  sourceKinds,
+  foreignSourceDevices,
+  initialDeviceId,
   isAdmin,
 }: Props) {
   const [optimistic, apply] = useOptimistic(devices, reduce);
+  const [optimisticSources, applySource] = useOptimistic(
+    sources,
+    reduceSources,
+  );
   const [, startTransition] = useTransition();
   const [draft, setDraft] = useState<{ lat: number; lng: number } | null>(null);
+  const [sourceDraft, setSourceDraft] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [editingSource, setEditingSource] = useState(false);
 
   const mode = useMapStore((s) => s.mode);
   const setMode = useMapStore((s) => s.setMode);
   const selectedId = useMapStore((s) => s.selectedId);
   const select = useMapStore((s) => s.select);
+  const selectedSourceId = useMapStore((s) => s.selectedSourceId);
+  const selectSource = useMapStore((s) => s.selectSource);
   const filters = useMapStore((s) => s.filters);
 
   // Per-zone UI state resets on entering a zone; the persisted display
@@ -107,7 +150,14 @@ export function ZoneWorkspace({
     useMapStore.getState().resetZoneState();
     void useMapStore.persist.rehydrate();
     setDraft(null);
-  }, [zone.id]);
+    setSourceDraft(null);
+    setEditingSource(false);
+    if (initialDeviceId && devices.some((d) => d.id === initialDeviceId)) {
+      useMapStore.getState().select(initialDeviceId, { fly: true });
+    }
+    // Only entering a zone (or arriving via ?device=) should re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zone.id, initialDeviceId]);
 
   // Add mode needs at least one device type to pick from.
   useEffect(() => {
@@ -118,7 +168,7 @@ export function ZoneWorkspace({
   }, [mode, types.length, setMode]);
 
   useEffect(() => {
-    if (mode !== "addDevice") return;
+    if (mode !== "addDevice" && mode !== "addSource") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMode("idle");
     };
@@ -127,6 +177,54 @@ export function ZoneWorkspace({
   }, [mode, setMode]);
 
   const selected = optimistic.find((d) => d.id === selectedId) ?? null;
+  const selectedSource =
+    optimisticSources.find((x) => x.id === selectedSourceId) ?? null;
+  const zoneNames = useMemo(
+    () =>
+      new Map([
+        [zone.id, zone.name],
+        ...otherZones.map((z) => [z.id, z.name] as const),
+      ]),
+    [zone.id, zone.name, otherZones],
+  );
+  const sourceOptions = useMemo(
+    () =>
+      optimisticSources.map((x) => ({
+        id: x.id,
+        name: x.name,
+        kind: x.kind,
+        zoneId: x.zoneId,
+      })),
+    [optimisticSources],
+  );
+  const markerSources = useMemo(
+    () =>
+      optimisticSources.map((x) => ({
+        id: x.id,
+        name: x.name,
+        lat: x.lat,
+        lng: x.lng,
+      })),
+    [optimisticSources],
+  );
+  const selectedSourceDevices = useMemo<SourceDeviceItem[]>(() => {
+    if (!selectedSource) return [];
+    const own = optimistic
+      .filter((d) => d.networkSourceId === selectedSource.id)
+      .map((d) => ({
+        id: d.id,
+        seq: d.seq,
+        zoneId: d.zoneId,
+        zoneName: zone.name,
+        typeName: d.typeName,
+        status: d.status,
+        locationDetail: d.locationDetail,
+      }));
+    const foreign = foreignSourceDevices.filter(
+      (d) => d.networkSourceId === selectedSource.id,
+    );
+    return [...own, ...foreign];
+  }, [selectedSource, optimistic, foreignSourceDevices, zone.name]);
   const visible = useMemo(
     () => filterDevices(optimistic, filters),
     [optimistic, filters],
@@ -142,6 +240,7 @@ export function ZoneWorkspace({
         lng: d.lng,
         locationDetail: d.locationDetail,
         typeIcon: d.typeIcon,
+        networkSourceId: d.networkSourceId,
       })),
     [visible],
   );
@@ -158,9 +257,36 @@ export function ZoneWorkspace({
   const onSelectMarker = useCallback(
     (deviceId: string) => {
       setDraft(null);
+      setSourceDraft(null);
+      setEditingSource(false);
       select(deviceId);
     },
     [select],
+  );
+
+  const onSelectSourceMarker = useCallback(
+    (sourceId: string) => {
+      setDraft(null);
+      setSourceDraft(null);
+      setEditingSource(false);
+      selectSource(sourceId);
+    },
+    [selectSource],
+  );
+
+  const onSourceMoved = useCallback(
+    (sourceId: string, lat: number, lng: number) => {
+      startTransition(async () => {
+        applySource({ type: "patch", id: sourceId, patch: { lat, lng } });
+        const res = await moveNetworkSourcePositionAction(sourceId, {
+          lat,
+          lng,
+        });
+        if (!res.ok) toast.error(res.error);
+        else toast.success(id.source.moved);
+      });
+    },
+    [applySource],
   );
 
   const onSelectFromList = useCallback(
@@ -183,12 +309,22 @@ export function ZoneWorkspace({
 
   const onPick = useCallback(
     (pos: { lat: number; lng: number }) => {
-      warnIfOutside(pos);
+      const adding = useMapStore.getState().mode;
       select(null);
+      selectSource(null);
       setMode("idle");
-      setDraft(pos);
+      setEditingSource(false);
+      if (adding === "addSource") {
+        // A source may sit between zones: no out-of-zone warning.
+        setDraft(null);
+        setSourceDraft(pos);
+      } else {
+        warnIfOutside(pos);
+        setSourceDraft(null);
+        setDraft(pos);
+      }
     },
-    [select, setMode, warnIfOutside],
+    [select, selectSource, setMode, warnIfOutside],
   );
 
   function onReorder(orderedIds: string[]) {
@@ -242,6 +378,7 @@ export function ZoneWorkspace({
             isRouter: input.isRouter,
             locationDetail: input.locationDetail,
             notes: input.notes,
+            networkSourceId: input.networkSourceId,
             ...(type ? { typeName: type.name, typeIcon: type.icon } : {}),
           },
         });
@@ -287,8 +424,23 @@ export function ZoneWorkspace({
     });
   }
 
+  function onDeleteSource(sourceId: string) {
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        selectSource(null);
+        setEditingSource(false);
+        applySource({ type: "remove", id: sourceId });
+        const res = await deleteNetworkSourceAction(sourceId);
+        if (!res.ok) toast.error(res.error);
+        else toast.success(id.source.deleted);
+        resolve();
+      });
+    });
+  }
+
   const nextSeq = optimistic.length + 1;
-  const adding = mode === "addDevice";
+  const adding = mode === "addDevice" || mode === "addSource";
+  const zoneChoices = [{ id: zone.id, name: zone.name }, ...otherZones];
 
   return (
     <div className="flex flex-col md:h-[calc(100dvh-3.5rem)]">
@@ -323,10 +475,14 @@ export function ZoneWorkspace({
             center={zone.center}
             zoom={zone.zoom}
             devices={markerDevices}
+            sources={markerSources}
             draft={draft ? { ...draft, seq: nextSeq } : null}
+            sourceDraft={sourceDraft}
             canEdit={isAdmin}
             onSelect={onSelectMarker}
             onMoved={onMoved}
+            onSelectSource={onSelectSourceMarker}
+            onSourceMoved={onSourceMoved}
             onPick={onPick}
           />
           <div className="pointer-events-none absolute inset-0 z-[1000]">
@@ -346,7 +502,9 @@ export function ZoneWorkspace({
             </div>
             {adding && (
               <div className="bg-card text-card-foreground pointer-events-auto absolute right-3 bottom-7 left-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm shadow-md">
-                <span role="status">{id.device.addHint}</span>
+                <span role="status">
+                  {mode === "addSource" ? id.source.addHint : id.device.addHint}
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -365,7 +523,66 @@ export function ZoneWorkspace({
           aria-label={id.sidebar.title}
           className="bg-background flex min-h-0 flex-col border-t md:w-96 md:border-t-0 md:border-l"
         >
-          {draft ? (
+          {sourceDraft || (editingSource && selectedSource) ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {sourceDraft ? (
+                <SourceForm
+                  key={`new:${sourceDraft.lat}:${sourceDraft.lng}`}
+                  initial={{
+                    name: "",
+                    kind: "",
+                    description: "",
+                    zoneId: zone.id,
+                    ...sourceDraft,
+                  }}
+                  zones={zoneChoices}
+                  kinds={sourceKinds}
+                  onSaved={(source) => {
+                    setSourceDraft(null);
+                    selectSource(source.id);
+                  }}
+                  onCancel={() => setSourceDraft(null)}
+                />
+              ) : (
+                selectedSource && (
+                  <SourceForm
+                    key={`edit:${selectedSource.id}:${selectedSource.updatedAt.getTime()}`}
+                    sourceId={selectedSource.id}
+                    initial={{
+                      name: selectedSource.name,
+                      kind: selectedSource.kind,
+                      description: selectedSource.description,
+                      zoneId: selectedSource.zoneId,
+                      lat: selectedSource.lat,
+                      lng: selectedSource.lng,
+                    }}
+                    zones={zoneChoices}
+                    kinds={sourceKinds}
+                    onSaved={() => setEditingSource(false)}
+                    onCancel={() => setEditingSource(false)}
+                  />
+                )
+              )}
+            </div>
+          ) : selectedSource ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <SourceDetail
+                source={{
+                  ...selectedSource,
+                  zoneName: selectedSource.zoneId
+                    ? (zoneNames.get(selectedSource.zoneId) ?? null)
+                    : null,
+                }}
+                devices={selectedSourceDevices}
+                currentZoneId={zone.id}
+                isAdmin={isAdmin}
+                onBack={() => selectSource(null)}
+                onSelectDevice={(deviceId) => select(deviceId, { fly: true })}
+                onEdit={() => setEditingSource(true)}
+                onDelete={() => onDeleteSource(selectedSource.id)}
+              />
+            </div>
+          ) : draft ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               <DeviceForm
                 // Re-mount when a new point is picked.
@@ -374,6 +591,7 @@ export function ZoneWorkspace({
                 position={draft}
                 nextSeq={nextSeq}
                 types={types}
+                sources={sourceOptions}
                 onCreated={(device) => {
                   setDraft(null);
                   select(device.id);
@@ -386,6 +604,7 @@ export function ZoneWorkspace({
               <DeviceDetail
                 device={selected}
                 types={types}
+                sources={sourceOptions}
                 otherZones={otherZones}
                 isAdmin={isAdmin}
                 onBack={() => select(null)}
@@ -403,6 +622,7 @@ export function ZoneWorkspace({
               onReorder={onReorder}
               onSelect={onSelectFromList}
               onAdd={() => setMode("addDevice")}
+              onAddSource={() => setMode("addSource")}
             />
           )}
         </aside>

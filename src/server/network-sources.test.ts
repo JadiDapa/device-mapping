@@ -8,6 +8,7 @@ import {
   createNetworkSource,
   deleteNetworkSource,
   getNetworkSource,
+  listForeignSourceDevices,
   listNetworkSources,
   listSourceDevices,
   listSourceKinds,
@@ -201,5 +202,20 @@ describe("network sources data layer", () => {
         .from(devices)
         .where(eq(devices.networkSourceId, s.id)),
     ).toHaveLength(2);
+  });
+
+  it("lists a source's devices from other zones only", async () => {
+    const s = await createNetworkSource(t.db, src());
+    await createDevice(t.db, dev({ networkSourceId: s.id }), userId);
+    const foreign = await createDevice(
+      t.db,
+      dev({ zoneId: zoneB, networkSourceId: s.id }),
+      userId,
+    );
+    const rows = await listForeignSourceDevices(t.db, zoneA, [s.id]);
+    expect(rows.map((r) => [r.id, r.networkSourceId])).toEqual([
+      [foreign.id, s.id],
+    ]);
+    expect(await listForeignSourceDevices(t.db, zoneA, [])).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPinPlusIcon, XIcon } from "lucide-react";
+import { MapPinPlusIcon, NetworkIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { id } from "@/lib/i18n/id";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,10 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
   const showTypeIcon = useMapStore((s) => s.showTypeIcon);
   const setShowLocation = useMapStore((s) => s.setShowLocation);
   const setShowTypeIcon = useMapStore((s) => s.setShowTypeIcon);
+  const showConnections = useMapStore((s) => s.showConnections);
+  const setShowConnections = useMapStore((s) => s.setShowConnections);
   const adding = mode === "addDevice";
+  const addingSource = mode === "addSource";
 
   return (
     <div className="pointer-events-none flex flex-wrap items-start gap-2">
@@ -54,6 +57,18 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
           {adding ? id.device.cancelAdd : id.device.add}
         </Button>
       )}
+      {canEdit && (
+        <Button
+          type="button"
+          size="sm"
+          variant={addingSource ? "secondary" : "outline"}
+          className="pointer-events-auto hidden min-h-9 shadow-md md:inline-flex"
+          onClick={() => setMode(addingSource ? "idle" : "addSource")}
+        >
+          {addingSource ? <XIcon /> : <NetworkIcon />}
+          {addingSource ? id.source.cancelAdd : id.source.add}
+        </Button>
+      )}
       <ToggleButton
         pressed={showLocation}
         onClick={() => setShowLocation(!showLocation)}
@@ -65,6 +80,12 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
         onClick={() => setShowTypeIcon(!showTypeIcon)}
       >
         {id.toggles.showTypeIcon}
+      </ToggleButton>
+      <ToggleButton
+        pressed={showConnections}
+        onClick={() => setShowConnections(!showConnections)}
+      >
+        {id.toggles.showConnections}
       </ToggleButton>
     </div>
   );

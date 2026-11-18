@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { NetworkIcon } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getDeviceIcon, RouterBadgeIcon } from "@/lib/device-icons";
 import { statusColor, statusLabel, type DeviceStatus } from "@/lib/status";
@@ -73,5 +74,30 @@ export function buildMarkerHtml(m: MarkerHtmlInput): string {
     `<div class="${cls}" data-testid="device-marker" data-seq="${m.seq}" ` +
     `data-status="${m.status}" data-label="${escapeHtml(statusLabel[m.status])}" ` +
     `style="--marker-color:${statusColor[m.status]}">${parts.join("")}</div>`
+  );
+}
+
+export type SourceMarkerHtmlInput = { name: string; selected: boolean };
+
+/**
+ * HTML for a network source's `L.divIcon`: a rounded square (different shape
+ * from the round device markers) with a always-visible name label below.
+ * Colours come from the `--map-source-*` tokens in globals.css.
+ */
+export function buildSourceMarkerHtml(m: SourceMarkerHtmlInput): string {
+  const icon = svg("source", () =>
+    createElement(NetworkIcon, {
+      size: 16,
+      strokeWidth: 2.25,
+      "aria-hidden": true,
+    }),
+  );
+  const cls = m.selected
+    ? "source-marker source-marker--selected"
+    : "source-marker";
+  return (
+    `<div class="${cls}" data-testid="source-marker" data-name="${escapeHtml(m.name)}">` +
+    `<span class="source-marker__box" aria-hidden="true">${icon}</span>` +
+    `<span class="source-marker__label">${escapeHtml(m.name)}</span></div>`
   );
 }

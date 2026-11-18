@@ -67,6 +67,7 @@ describe("devices data layer", () => {
       isRouter: false,
       locationDetail: null,
       notes: null,
+      networkSourceId: null,
       lat: -2.9,
       lng: 104.1,
       status: "not_installed",
@@ -410,6 +411,7 @@ describe("devices data layer", () => {
           isRouter: true,
           locationDetail: "Lantai 2",
           notes: "n",
+          networkSourceId: null,
         },
         userId,
       );
@@ -434,6 +436,7 @@ describe("devices data layer", () => {
           isRouter: false,
           locationDetail: "baru",
           notes: null,
+          networkSourceId: null,
           expectedUpdatedAt: d.updatedAt.toISOString(),
         },
         userId,

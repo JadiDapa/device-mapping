@@ -24,6 +24,7 @@ import {
 import { createDeviceAction } from "@/server/actions/devices";
 import type { Device } from "@/server/devices";
 import { PartialFields } from "./partial-fields";
+import { SourceSelect, type SourceOption } from "./source-select";
 import { StatusSegmented } from "./status-segmented";
 
 export type TypeOption = { id: string; name: string };
@@ -34,6 +35,7 @@ export function DeviceForm({
   position,
   nextSeq,
   types,
+  sources,
   onCreated,
   onCancel,
 }: {
@@ -41,6 +43,7 @@ export function DeviceForm({
   position: { lat: number; lng: number };
   nextSeq: number;
   types: TypeOption[];
+  sources: SourceOption[];
   onCreated: (device: Device) => void;
   onCancel: () => void;
 }) {
@@ -53,6 +56,7 @@ export function DeviceForm({
         isRouter: false,
         locationDetail: "",
         notes: "",
+        networkSourceId: "",
         lat: position.lat,
         lng: position.lng,
         status: "not_installed",
@@ -176,6 +180,13 @@ export function DeviceForm({
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
+        />
+        <SourceSelect
+          htmlId="new-device-source"
+          value={watch("networkSourceId")}
+          onChange={(v) => setValue("networkSourceId", v)}
+          sources={sources}
+          zoneId={zoneId}
         />
         <Field>
           <FieldLabel>{id.device.status}</FieldLabel>

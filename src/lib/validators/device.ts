@@ -95,5 +95,6 @@ export const reorderSchema = z
 
 export type DeviceCreateInput = z.output<typeof deviceCreateSchema>;
 export type DeviceUpdateInput = z.output<typeof deviceUpdateSchema>;
+export type DeviceUpdateValues = z.input<typeof deviceUpdateSchema>;
 export type DeviceStatusInput = z.output<typeof deviceStatusSchema>;
 export type DeviceCreateValues = z.input<typeof deviceCreateSchema>;

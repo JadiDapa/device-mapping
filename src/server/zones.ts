@@ -90,6 +90,16 @@ export async function listZoneSummaries(
   }));
 }
 
+/** Every zone's id and name (for the "move to zone" picker). */
+export async function listZoneOptions(
+  db: Database,
+): Promise<{ id: string; name: string }[]> {
+  return db
+    .select({ id: zones.id, name: zones.name })
+    .from(zones)
+    .orderBy(asc(zones.name));
+}
+
 /** Summary of one zone (same GROUP BY query as the dashboard). */
 export async function getZoneSummary(
   db: Database,

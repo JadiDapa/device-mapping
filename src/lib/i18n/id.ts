@@ -181,6 +181,9 @@ export const id = {
     notesTooLong: "Catatan maksimal 2000 karakter.",
     dragHandle: "Seret untuk mengubah urutan",
     noLocation: "Tanpa lokasi detail",
+    markerTitle: "Perangkat {seq}: {status}",
+    nextSeq: "Nomor berikutnya: {seq}",
+    locating: "Mencari posisi...",
   },
   statusChange: {
     note: "Catatan perubahan",
@@ -193,6 +196,8 @@ export const id = {
     noteTooLong: "Catatan maksimal 1000 karakter.",
     apply: "Simpan status",
     statusGroup: "Ubah status",
+    installed: "terpasang",
+    notInstalledYet: "belum",
   },
   history: {
     empty: "Belum ada riwayat.",

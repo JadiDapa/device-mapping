@@ -19,6 +19,8 @@ type Props = {
   center?: { lat: number; lng: number } | null;
   zoom?: number | null;
   className?: string;
+  /** Extra layers (markers, interactions) rendered inside the map. */
+  children?: React.ReactNode;
 };
 
 /**
@@ -32,6 +34,7 @@ export default function MapView({
   center,
   zoom,
   className,
+  children,
 }: Props) {
   const view = center ?? publicEnv.defaultCenter;
   return (
@@ -53,6 +56,7 @@ export default function MapView({
       ) : (
         boundary && <ZoneBoundary boundary={boundary} />
       )}
+      {children}
     </MapContainer>
   );
 }

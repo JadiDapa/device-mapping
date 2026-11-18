@@ -1,19 +1,18 @@
 /**
  * Runtime migrator (not drizzle-kit): applies the committed migrations in
- * ./drizzle. If your app needs singleton/default rows, seed them here after
- * the migration step.
+ * ./src/db/migrations.
  */
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { getDb, getSqlite } from "@/db";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { closeDb, getDb } from "@/db";
 
 async function main() {
-  const db = getDb();
-
   console.log("Running migrations...");
-  migrate(db, { migrationsFolder: "./drizzle" });
-  console.log("Migrations complete.");
-
-  getSqlite().close();
+  try {
+    await migrate(getDb(), { migrationsFolder: "./src/db/migrations" });
+    console.log("Migrations complete.");
+  } finally {
+    await closeDb();
+  }
 }
 
 main().catch((error) => {

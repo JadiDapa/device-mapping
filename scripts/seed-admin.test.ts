@@ -1,76 +1,136 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { verifyPassword } from "better-auth/crypto";
-import { beforeEach, describe, expect, it } from "vitest";
-import * as schema from "@/db/schema";
-import { user, account } from "@/db/schema";
-import { seedAdmin } from "./seed-admin";
+import { createTestDb, type TestDb } from "@/test/db";
+import { account, deviceTypes, user } from "@/db/schema";
+import {
+  requireSeedCredentials,
+  seedAdmin,
+  seedAdminAndDefaults,
+} from "./seed-admin";
+
+describe("requireSeedCredentials", () => {
+  it("returns the credentials when both are set", () => {
+    expect(
+      requireSeedCredentials({
+        SEED_ADMIN_EMAIL: "admin@example.com",
+        SEED_ADMIN_PASSWORD: "supersecret1",
+      }),
+    ).toEqual({ email: "admin@example.com", password: "supersecret1" });
+  });
+
+  it("fails with a clear message when either is missing", () => {
+    expect(() => requireSeedCredentials({})).toThrow(
+      /SEED_ADMIN_EMAIL.*SEED_ADMIN_PASSWORD/,
+    );
+    expect(() =>
+      requireSeedCredentials({ SEED_ADMIN_EMAIL: "a@b.co" }),
+    ).toThrow(/SEED_ADMIN_PASSWORD/);
+    expect(() =>
+      requireSeedCredentials({ SEED_ADMIN_PASSWORD: "supersecret1" }),
+    ).toThrow(/SEED_ADMIN_EMAIL/);
+  });
+
+  it("rejects a password shorter than Better Auth's 8-character minimum", () => {
+    expect(() =>
+      requireSeedCredentials({
+        SEED_ADMIN_EMAIL: "a@b.co",
+        SEED_ADMIN_PASSWORD: "short",
+      }),
+    ).toThrow(/8/);
+  });
+});
 
 describe("seedAdmin", () => {
-  let sqlite: Database.Database;
-  let db: ReturnType<typeof drizzle<typeof schema>>;
+  let t: TestDb;
+  const credentials = { email: "admin@example.com", password: "supersecret1" };
 
-  beforeEach(() => {
-    sqlite = new Database(":memory:");
-    sqlite.pragma("foreign_keys = ON");
-    db = drizzle(sqlite, { schema });
-    migrate(db, { migrationsFolder: "./drizzle" });
+  beforeAll(async () => {
+    t = await createTestDb();
   });
 
-  it("creates a user and a credential account when no user exists", async () => {
-    await seedAdmin(db, {
-      email: "admin@example.com",
-      password: "a-secure-password",
-    });
-
-    const users = db.select().from(user).all();
-    expect(users).toHaveLength(1);
-    expect(users[0]?.email).toBe("admin@example.com");
-    expect(users[0]?.emailVerified).toBe(true);
-
-    const accounts = db.select().from(account).all();
-    expect(accounts).toHaveLength(1);
-    expect(accounts[0]?.providerId).toBe("credential");
-    expect(accounts[0]?.password).toBeTruthy();
+  afterAll(async () => {
+    await t.close();
   });
 
-  it("stores a password hash that verifies against the plaintext", async () => {
-    await seedAdmin(db, {
-      email: "admin@example.com",
-      password: "a-secure-password",
-    });
+  it("creates an admin user with a verifiable credential account", async () => {
+    const result = await seedAdmin(t.db, credentials);
+    expect(result).toEqual({ created: true });
 
-    const [row] = db.select().from(account).all();
-    const hash = row?.password;
-    expect(hash).toBeTruthy();
+    const [row] = await t.db
+      .select()
+      .from(user)
+      .where(eq(user.email, credentials.email));
+    expect(row).toBeDefined();
+    expect(row!.role).toBe("admin");
+    expect(row!.emailVerified).toBe(true);
+    expect(row!.id).toMatch(/^[0-9a-f-]{36}$/);
 
-    const valid = await verifyPassword({
-      hash: hash as string,
-      password: "a-secure-password",
-    });
-    expect(valid).toBe(true);
-
-    const invalid = await verifyPassword({
-      hash: hash as string,
-      password: "wrong-password",
-    });
-    expect(invalid).toBe(false);
+    const [acc] = await t.db
+      .select()
+      .from(account)
+      .where(eq(account.userId, row!.id));
+    expect(acc!.providerId).toBe("credential");
+    expect(acc!.password).toBeTruthy();
+    expect(acc!.password).not.toBe(credentials.password);
+    expect(
+      await verifyPassword({
+        hash: acc!.password!,
+        password: credentials.password,
+      }),
+    ).toBe(true);
   });
 
-  it("is a no-op when a user already exists", async () => {
-    await seedAdmin(db, {
-      email: "admin@example.com",
-      password: "first-password",
-    });
+  it("is idempotent for the same email", async () => {
+    const again = await seedAdmin(t.db, credentials);
+    expect(again).toEqual({ created: false });
+    expect(await t.db.select().from(user)).toHaveLength(1);
+    expect(await t.db.select().from(account)).toHaveLength(1);
+  });
 
-    await seedAdmin(db, {
-      email: "someone-else@example.com",
-      password: "second-password",
+  it("still creates the admin when other users already exist", async () => {
+    const result = await seedAdmin(t.db, {
+      email: "second@example.com",
+      password: "supersecret1",
     });
+    expect(result).toEqual({ created: true });
+    expect(await t.db.select().from(user)).toHaveLength(2);
+  });
 
-    const users = db.select().from(user).all();
-    expect(users).toHaveLength(1);
-    expect(users[0]?.email).toBe("admin@example.com");
+  it("does not demote or alter an existing user with the same email", async () => {
+    await t.db
+      .update(user)
+      .set({ name: "Renamed" })
+      .where(eq(user.email, credentials.email));
+    await seedAdmin(t.db, credentials);
+    const [row] = await t.db
+      .select()
+      .from(user)
+      .where(eq(user.email, credentials.email));
+    expect(row!.name).toBe("Renamed");
+  });
+});
+
+describe("seedAdminAndDefaults", () => {
+  let t: TestDb;
+
+  beforeAll(async () => {
+    t = await createTestDb();
+  });
+
+  afterAll(async () => {
+    await t.close();
+  });
+
+  it("creates the admin and the default device types, idempotently", async () => {
+    const opts = { email: "admin@example.com", password: "supersecret1" };
+    await seedAdminAndDefaults(t.db, opts);
+    await seedAdminAndDefaults(t.db, opts);
+    expect(await t.db.select().from(user)).toHaveLength(1);
+    const types = await t.db.select().from(deviceTypes);
+    expect(types.map((x) => x.name).sort()).toEqual([
+      "BLE Receiver",
+      "Gateway",
+    ]);
   });
 });

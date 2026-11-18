@@ -3,8 +3,14 @@
 import { useCallback } from "react";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { GeoJsonPolygon } from "@/db/schema";
+import type { ConnectionType } from "@/lib/connection";
 import { ConnectionLines } from "./connection-lines";
 import { DeviceMarker, type MarkerDevice } from "./device-marker";
+import {
+  ExtenderLines,
+  ExtenderMarker,
+  type MarkerExtender,
+} from "./extender-marker";
 import { useMapStore } from "./map-store";
 import { FlyTo, PickPosition } from "./map-interactions";
 import MapView from "./map-view";
@@ -14,6 +20,7 @@ import { SourceMarker, type MarkerSource } from "./source-marker";
 export type ZoneMapDevice = MarkerDevice & {
   networkSourceId: string | null;
   parentDeviceId: string | null;
+  connectionType: ConnectionType;
 };
 
 type Props = {
@@ -27,6 +34,12 @@ type Props = {
   draft: { lat: number; lng: number; seq: number } | null;
   /** Position of the source being created, shown as a preview marker. */
   sourceDraft: { lat: number; lng: number } | null;
+  extenders: MarkerExtender[];
+  selectedExtenderId: string | null;
+  /** Position of the extender being created, shown as a preview marker. */
+  extenderDraft: { lat: number; lng: number } | null;
+  onSelectExtender: (id: string) => void;
+  onExtenderMoved: (id: string, lat: number, lng: number) => void;
   canEdit: boolean;
   onSelect: (id: string) => void;
   onMoved: (id: string, lat: number, lng: number) => void;
@@ -49,6 +62,11 @@ export default function ZoneMap({
   sources,
   draft,
   sourceDraft,
+  extenders,
+  selectedExtenderId,
+  extenderDraft,
+  onSelectExtender,
+  onExtenderMoved,
   canEdit,
   onSelect,
   onMoved,
@@ -71,6 +89,7 @@ export default function ZoneMap({
   const flyTarget =
     devices.find((d) => d.id === selectedId) ??
     sources.find((s) => s.id === selectedSourceId) ??
+    extenders.find((x) => x.id === selectedExtenderId) ??
     null;
   const noopMoved = useCallback(() => {}, []);
   const noopSelect = useCallback(() => {}, []);
@@ -83,7 +102,35 @@ export default function ZoneMap({
       className="absolute inset-0 rounded-none"
     >
       {showConnections && (
-        <ConnectionLines devices={devices} sources={sources} />
+        <>
+          <ConnectionLines devices={devices} sources={sources} />
+          <ExtenderLines extenders={extenders} devices={devices} />
+        </>
+      )}
+      {extenders.map((x) => (
+        <ExtenderMarker
+          key={x.id}
+          extender={x}
+          selected={x.id === selectedExtenderId}
+          draggable={canDrag}
+          onSelect={onSelectExtender}
+          onMoved={onExtenderMoved}
+        />
+      ))}
+      {extenderDraft && (
+        <ExtenderMarker
+          extender={{
+            id: "draft",
+            ...extenderDraft,
+            label: "?→?",
+            fromDeviceId: null,
+            toDeviceId: null,
+          }}
+          selected
+          draggable={false}
+          onSelect={noopSelect}
+          onMoved={noopMoved}
+        />
       )}
       {sources.map((s) => (
         <SourceMarker
@@ -137,7 +184,9 @@ export default function ZoneMap({
         />
       )}
       <PickPosition
-        active={mode === "addDevice" || mode === "addSource"}
+        active={
+          mode === "addDevice" || mode === "addSource" || mode === "addExtender"
+        }
         onPick={onPick}
       />
       <FlyTo token={flyToken} target={flyTarget} />

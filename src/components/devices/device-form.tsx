@@ -23,6 +23,7 @@ import {
 } from "@/lib/validators/device";
 import { createDeviceAction } from "@/server/actions/devices";
 import type { Device } from "@/server/devices";
+import { ConnectionTypeSelect } from "./connection-type-select";
 import { PartialFields } from "./partial-fields";
 import { ParentSelect, type RouterOption } from "./parent-select";
 import { SourceSelect, type SourceOption } from "./source-select";
@@ -57,6 +58,7 @@ export function DeviceForm({
         zoneId,
         deviceTypeId: types[0]?.id ?? "",
         isRouter: false,
+        connectionType: "lan_poe",
         locationDetail: "",
         notes: "",
         networkSourceId: "",
@@ -185,22 +187,32 @@ export function DeviceForm({
             </Field>
           )}
         />
-        {watch("isRouter") === true ? (
-          <SourceSelect
-            htmlId="new-device-source"
-            value={watch("networkSourceId")}
-            onChange={(v) => setValue("networkSourceId", v)}
-            sources={sources}
-            zoneId={zoneId}
-          />
-        ) : (
+        <SourceSelect
+          htmlId="new-device-source"
+          value={watch("networkSourceId")}
+          onChange={(v) => {
+            setValue("networkSourceId", v);
+            if (v) setValue("parentDeviceId", "");
+          }}
+          sources={sources}
+          zoneId={zoneId}
+        />
+        {watch("isRouter") !== true && (
           <ParentSelect
             htmlId="new-device-parent"
             value={watch("parentDeviceId")}
-            onChange={(v) => setValue("parentDeviceId", v)}
+            onChange={(v) => {
+              setValue("parentDeviceId", v);
+              if (v) setValue("networkSourceId", "");
+            }}
             routers={routers}
           />
         )}
+        <ConnectionTypeSelect
+          htmlId="new-device-connection"
+          value={watch("connectionType")}
+          onChange={(v) => setValue("connectionType", v)}
+        />
         <Field>
           <FieldLabel>{id.device.status}</FieldLabel>
           <StatusSegmented

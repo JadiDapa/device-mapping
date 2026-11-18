@@ -39,6 +39,8 @@ import type { ZoneDevice } from "@/server/devices";
 import { DeviceHistory } from "./device-history";
 import type { TypeOption } from "./device-form";
 import { SeqBadge } from "./seq-badge";
+import { connectionLabel } from "@/lib/connection";
+import { ConnectionTypeSelect } from "./connection-type-select";
 import { ParentSelect, routerLabel, type RouterOption } from "./parent-select";
 import { SourceSelect, type SourceOption } from "./source-select";
 import { StatusSelector } from "./status-selector";
@@ -190,17 +192,22 @@ function ReadOnlyFields({
         <dt className="text-muted-foreground">{id.device.locationDetail}</dt>
         <dd>{device.locationDetail ?? id.device.noLocation}</dd>
       </div>
-      {device.isRouter ? (
-        <div>
-          <dt className="text-muted-foreground">{id.source.deviceField}</dt>
-          <dd>{source ? `${source.name} (${source.kind})` : "—"}</dd>
-        </div>
-      ) : (
+      <div>
+        <dt className="text-muted-foreground">{id.source.deviceField}</dt>
+        <dd>{source ? `${source.name} (${source.kind})` : "—"}</dd>
+      </div>
+      {!device.isRouter && (
         <div>
           <dt className="text-muted-foreground">{id.device.parentField}</dt>
           <dd>{parent ? routerLabel(parent) : "—"}</dd>
         </div>
       )}
+      <div>
+        <dt className="text-muted-foreground">{id.connection.field}</dt>
+        <dd data-testid="connection-type">
+          {connectionLabel[device.connectionType]}
+        </dd>
+      </div>
       <div>
         <dt className="text-muted-foreground">{id.device.notes}</dt>
         <dd className="whitespace-pre-wrap">{device.notes ?? "—"}</dd>
@@ -231,6 +238,7 @@ function EditForm({
     defaultValues: {
       deviceTypeId: device.deviceTypeId,
       isRouter: device.isRouter,
+      connectionType: device.connectionType,
       locationDetail: device.locationDetail ?? "",
       notes: device.notes ?? "",
       networkSourceId: device.networkSourceId ?? "",
@@ -323,26 +331,32 @@ function EditForm({
             </Field>
           )}
         />
-        {watch("isRouter") === true ? (
-          <SourceSelect
-            htmlId="edit-device-source"
-            value={watch("networkSourceId")}
-            onChange={(v) =>
-              setValue("networkSourceId", v, { shouldDirty: true })
-            }
-            sources={sources}
-            zoneId={device.zoneId}
-          />
-        ) : (
+        <SourceSelect
+          htmlId="edit-device-source"
+          value={watch("networkSourceId")}
+          onChange={(v) => {
+            setValue("networkSourceId", v, { shouldDirty: true });
+            if (v) setValue("parentDeviceId", "", { shouldDirty: true });
+          }}
+          sources={sources}
+          zoneId={device.zoneId}
+        />
+        {watch("isRouter") !== true && (
           <ParentSelect
             htmlId="edit-device-parent"
             value={watch("parentDeviceId")}
-            onChange={(v) =>
-              setValue("parentDeviceId", v, { shouldDirty: true })
-            }
+            onChange={(v) => {
+              setValue("parentDeviceId", v, { shouldDirty: true });
+              if (v) setValue("networkSourceId", "", { shouldDirty: true });
+            }}
             routers={routers.filter((r) => r.id !== device.id)}
           />
         )}
+        <ConnectionTypeSelect
+          htmlId="edit-device-connection"
+          value={watch("connectionType")}
+          onChange={(v) => setValue("connectionType", v, { shouldDirty: true })}
+        />
       </FieldGroup>
       <Button type="submit" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? id.common.saving : id.common.save}

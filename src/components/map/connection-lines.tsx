@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Polyline } from "react-leaflet";
+import type { ConnectionType } from "@/lib/connection";
 import type { MarkerSource } from "./source-marker";
 
 type Linked = {
@@ -10,6 +11,13 @@ type Linked = {
   lng: number;
   networkSourceId: string | null;
   parentDeviceId?: string | null;
+  connectionType?: ConnectionType;
+};
+
+const LINE_CLASS: Record<ConnectionType, string> = {
+  lan_poe: "connection-line",
+  fiber_optic: "connection-line connection-line--fiber",
+  wifi: "connection-line connection-line--wifi",
 };
 
 /**
@@ -45,7 +53,7 @@ function ConnectionLinesImpl({
               [target.lat, target.lng],
             ]}
             interactive={false}
-            className="connection-line"
+            className={LINE_CLASS[d.connectionType ?? "lan_poe"]}
           />
         );
       })}

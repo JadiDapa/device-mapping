@@ -5,6 +5,7 @@ import {
   deviceStatusHistory,
   devices,
   deviceTypes,
+  networkSources,
   user,
   zones,
 } from "@/db/schema";
@@ -68,6 +69,7 @@ describe("devices data layer", () => {
       zoneId: zoneA,
       deviceTypeId: typeId,
       isRouter: false,
+      connectionType: "lan_poe",
       locationDetail: null,
       notes: null,
       networkSourceId: null,
@@ -413,6 +415,7 @@ describe("devices data layer", () => {
         {
           deviceTypeId: typeId,
           isRouter: true,
+          connectionType: "fiber_optic",
           locationDetail: "Lantai 2",
           notes: "n",
           networkSourceId: null,
@@ -422,6 +425,7 @@ describe("devices data layer", () => {
       );
       expect(device).toMatchObject({
         isRouter: true,
+        connectionType: "fiber_optic",
         locationDetail: "Lantai 2",
         status: "tested",
         seq: 1,
@@ -439,6 +443,7 @@ describe("devices data layer", () => {
         {
           deviceTypeId: typeId,
           isRouter: false,
+          connectionType: "lan_poe",
           locationDetail: "baru",
           notes: null,
           networkSourceId: null,
@@ -470,6 +475,7 @@ describe("devices data layer", () => {
     const detail = (over: Record<string, unknown> = {}) => ({
       deviceTypeId: typeId,
       isRouter: false,
+      connectionType: "lan_poe" as const,
       locationDetail: null,
       notes: null,
       networkSourceId: null,
@@ -500,6 +506,29 @@ describe("devices data layer", () => {
       await expect(
         createDevice(t.db, input({ parentDeviceId: other.id }), userId),
       ).rejects.toBeInstanceOf(InvalidParentError);
+    });
+
+    it("a non-router may connect straight to a source; a router parent replaces it", async () => {
+      const [src] = await t.db
+        .insert(networkSources)
+        .values({ name: "Shelter", kind: "Shelter", lat: -3, lng: 104 })
+        .returning();
+      const direct = await createDevice(
+        t.db,
+        input({ networkSourceId: src!.id }),
+        userId,
+      );
+      expect(direct.networkSourceId).toBe(src!.id);
+      const r = await createDevice(t.db, input({ isRouter: true }), userId);
+      const both = await createDevice(
+        t.db,
+        input({ networkSourceId: src!.id, parentDeviceId: r.id }),
+        userId,
+      );
+      expect(both).toMatchObject({
+        parentDeviceId: r.id,
+        networkSourceId: null,
+      });
     });
 
     it("a router never keeps a parent", async () => {

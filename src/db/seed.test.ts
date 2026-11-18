@@ -28,7 +28,7 @@ describe("seedDeviceTypes", () => {
   it("is idempotent", async () => {
     await seedDeviceTypes(t.db);
     await seedDeviceTypes(t.db);
-    expect(await t.db.select().from(deviceTypes)).toHaveLength(2);
+    expect(await t.db.select().from(deviceTypes)).toHaveLength(3);
   });
 
   it("does not overwrite edits an admin already made", async () => {

@@ -6,6 +6,7 @@ import {
   MapPinPlusIcon,
   MoveIcon,
   NetworkIcon,
+  RadioTowerIcon,
   SlidersHorizontalIcon,
   XIcon,
 } from "lucide-react";
@@ -63,6 +64,7 @@ export function MapToolbar({
   const [displayOpen, setDisplayOpen] = useState(false);
   const adding = mode === "addDevice";
   const addingSource = mode === "addSource";
+  const addingExtender = mode === "addExtender";
   const moving = mode === "move";
 
   return (
@@ -101,6 +103,18 @@ export function MapToolbar({
         >
           {addingSource ? <XIcon /> : <NetworkIcon />}
           {addingSource ? id.source.cancelAdd : id.source.add}
+        </Button>
+      )}
+      {canEdit && (
+        <Button
+          type="button"
+          size="sm"
+          variant={addingExtender ? "secondary" : "outline"}
+          className="pointer-events-auto hidden min-h-9 shadow-md md:inline-flex"
+          onClick={() => setMode(addingExtender ? "idle" : "addExtender")}
+        >
+          {addingExtender ? <XIcon /> : <RadioTowerIcon />}
+          {addingExtender ? id.extender.cancelAdd : id.extender.add}
         </Button>
       )}
       {canEdit && (

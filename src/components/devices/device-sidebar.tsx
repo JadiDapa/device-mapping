@@ -22,6 +22,7 @@ import {
   GripVerticalIcon,
   LocateFixedIcon,
   NetworkIcon,
+  RadioTowerIcon,
   PlusIcon,
 } from "lucide-react";
 import { useMapStore } from "@/components/map/map-store";
@@ -46,6 +47,7 @@ type Props = {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onAddSource: () => void;
+  onAddExtender: () => void;
   /** Add a device at the browser GPS position. */
   onAddHere: () => void;
 };
@@ -58,6 +60,7 @@ export function DeviceSidebar({
   onSelect,
   onAdd,
   onAddSource,
+  onAddExtender,
   onAddHere,
 }: Props) {
   const filters = useMapStore((s) => s.filters);
@@ -127,6 +130,15 @@ export function DeviceSidebar({
                 title={id.source.add}
               >
                 <NetworkIcon />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={onAddExtender}
+                aria-label={id.extender.add}
+                title={id.extender.add}
+              >
+                <RadioTowerIcon />
               </Button>
             </div>
           )}

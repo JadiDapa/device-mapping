@@ -113,7 +113,8 @@ SEED_ADMIN_PASSWORD=
 | **Zona** | Area kerja (mis. Pusri 2B). Punya nama, deskripsi, batas polygon. |
 | **Perangkat / Titik** | Satu device yang dipasang. Bernomor urut per zona. |
 | **Tipe Perangkat** | Master data yang dikelola admin (Gateway, BLE Receiver, …) + ikon. |
-| **Router** | Flag pada perangkat (`is_router`). Ditampilkan sebagai ikon kecil di samping lingkaran nomor. Menggantikan "lingkaran hijau" pada desain lama. |
+| **Router** | Flag pada perangkat (`is_router`). Satu titik box router **selalu sekaligus BLE Receiver** (bukan Gateway). Ditampilkan sebagai ikon kecil di samping lingkaran nomor. Menggantikan "lingkaran hijau" pada desain lama. |
+| **Rantai koneksi** | Sumber jaringan (router shelter) → **Router + BLE** (`network_source_id`) → perangkat lain, mis. BLE Gateway/CCTV (`parent_device_id`, harus router di zona yang sama). Router tidak punya induk perangkat. |
 | **Sumber Jaringan** | Titik asal jaringan (Shelter, Control Room, Panel, dll.). Nama & jenis bebas. |
 | **Status** | Tahap instalasi (4 tahap, lihat §4). |
  
@@ -183,7 +184,8 @@ Semua tabel: `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at` 
 | has_fo | boolean default false | |
 | has_ethernet | boolean default false | |
 | partial_note | text | |
-| network_source_id | fk network_sources, nullable | on delete set null |
+| network_source_id | fk network_sources, nullable | on delete set null; dipakai oleh router |
+| parent_device_id | fk devices, nullable | on delete set null; router induk (non-router saja), zona sama |
 | updated_by | fk user | |
  
 Constraint: `unique (zone_id, seq)` **DEFERRABLE INITIALLY DEFERRED** (agar renumber dalam satu transaksi aman). Jika drizzle-kit tidak mendukung deferrable, tulis lewat custom SQL migration.
@@ -265,7 +267,7 @@ Layout mobile: peta penuh + **bottom sheet** untuk daftar & detail.
 - AC: mengubah status langsung mengubah warna marker tanpa reload (optimistic update) dan menambah 1 baris riwayat.
 ### F5. Tipe Perangkat (`/admin/device-types`)
 - CRUD nama, ikon (pilih dari grid preset lucide), deskripsi.
-- Seed awal: "Gateway" (`radio`), "BLE Receiver" (`bluetooth`).
+- Seed awal: "Gateway" (`radio`), "BLE Receiver" (`bluetooth`), "CCTV" (`cctv`).
 - AC: ikon baru langsung terpakai di marker/sidebar/legend.
 ### F6. Sumber Jaringan
 - CRUD dari peta zona dan dari daftar `/network-sources`.

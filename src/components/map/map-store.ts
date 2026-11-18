@@ -34,7 +34,8 @@ export const safeStorage: StateStorage = {
 };
 
 /** `move`: touch screens only drag markers after entering this mode. */
-export type MapMode = "idle" | "addDevice" | "addSource" | "move";
+export type MapMode =
+  "idle" | "addDevice" | "addSource" | "addExtender" | "move";
 
 type MapState = {
   mode: MapMode;

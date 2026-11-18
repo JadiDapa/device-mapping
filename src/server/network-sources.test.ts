@@ -43,6 +43,7 @@ describe("network sources data layer", () => {
     zoneId: zoneA,
     deviceTypeId: typeId,
     isRouter: false,
+    connectionType: "lan_poe",
     locationDetail: null,
     notes: null,
     networkSourceId: null,
@@ -125,6 +126,7 @@ describe("network sources data layer", () => {
       {
         deviceTypeId: typeId,
         isRouter: false,
+        connectionType: "lan_poe",
         locationDetail: null,
         notes: null,
         networkSourceId: null,

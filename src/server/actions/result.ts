@@ -12,6 +12,7 @@ import {
   InvalidParentError,
   ReorderMismatchError,
 } from "@/server/devices";
+import { ExtenderNotFoundError } from "@/server/extenders";
 import { NetworkSourceNotFoundError } from "@/server/network-sources";
 import {
   LastAdminError,
@@ -111,6 +112,9 @@ export async function runAction<T>(
     }
     if (error instanceof DeviceNotFoundError) {
       return { ok: false, status: 404, error: id.device.notFound };
+    }
+    if (error instanceof ExtenderNotFoundError) {
+      return { ok: false, status: 404, error: id.extender.notFound };
     }
     if (error instanceof InvalidParentError) {
       return {

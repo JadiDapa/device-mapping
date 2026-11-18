@@ -116,12 +116,15 @@
   --map-type-badge-fg: var(--card-foreground);
   --map-label-bg: var(--secondary);
   --map-label-fg: var(--secondary-foreground);
+  --map-extender-bg: var(--secondary);
+  --map-extender-fg: var(--primary);
   --map-source-bg: var(--secondary);
   --map-source-fg: var(--primary);
   --map-source-label-bg: var(--secondary);
   --map-source-label-fg: var(--secondary-foreground);
   --map-connection: #f6f6f3;
   --map-connection-active: var(--primary);
+  --map-connection-fiber: var(--primary);
 }
 
 .dark {
@@ -330,42 +333,47 @@
   background: transparent;
   border: 0;
 }
+/* 36px head; the rotated square's tip lands ~44px below the box top. */
 .device-marker {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  transition: transform 150ms ease;
 }
 .device-marker__dot {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  inset: 0;
   /* Map pin: rounded square with one sharp corner, rotated so the corner
      points down (the tip is the geo position). */
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   border: 2px solid var(--map-marker-border);
   background: var(--marker-color);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 150ms ease;
+}
+/* Number sits in an unrotated layer on top of the pin head. */
+.device-marker__num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--map-marker-fg);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1;
-  box-shadow: var(--shadow-md);
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
-  transition:
-    transform 150ms ease,
-    box-shadow 150ms ease;
+  pointer-events: none;
 }
-.device-marker__num {
-  display: block;
-  transform: rotate(45deg);
+/* PRD-M8 §1.1 E: white ring + soft lime halo + scale (about the pin tip);
+   never a status colour. */
+.device-marker--selected {
+  transform: scale(1.15);
+  transform-origin: 50% 122%;
 }
-/* PRD-M8 §1.1 E: white ring + soft lime halo + scale; never a status colour. */
 .device-marker--selected .device-marker__dot {
-  transform: rotate(-45deg) scale(1.15);
   box-shadow:
     0 0 0 3px var(--map-marker-ring),
     0 0 0 8px var(--map-marker-halo),
@@ -387,11 +395,35 @@
   justify-content: center;
   border-radius: 9999px;
 }
-.device-marker__badge--router {
-  top: -5px;
-  right: -5px;
-  width: 14px;
-  height: 14px;
+/* Extender pin: neutral colour (tokens), "5→6" label that shrinks to fit. */
+.device-marker--extender {
+  --marker-color: var(--map-extender-bg);
+}
+.device-marker--extender .device-marker__num {
+  color: var(--map-extender-fg);
+  font-size: 13px;
+  gap: 1px;
+  text-shadow: none;
+}
+.device-marker--extender .device-marker__num svg {
+  flex: none;
+  width: 8px;
+  height: 8px;
+}
+.device-marker--extender .device-marker__num[data-len="m"] {
+  font-size: 11px;
+}
+.device-marker--extender .device-marker__num[data-len="l"] {
+  font-size: 9px;
+}
+/* Centred on the pin head's top-right outline (the 45° point of the circle),
+   so it hugs the pin; ~45% of the head width, number stays centred. */
+.device-marker__badge--router,
+.device-marker__badge--extender {
+  top: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
   background: var(--map-badge-bg);
   color: var(--map-badge-fg);
   border: 1px solid var(--map-marker-border);
@@ -409,7 +441,7 @@
   position: absolute;
   top: 100%;
   left: 50%;
-  margin-top: 12px; /* clears the pin tip below the 28px box */
+  margin-top: 14px; /* clears the pin tip below the 36px box */
   max-width: 140px;
   transform: translateX(-50%);
   overflow: hidden;
@@ -511,6 +543,20 @@
   stroke-dasharray: 6 5;
   stroke-opacity: 0.7;
   fill: none;
+}
+/* Fiber optic: solid, thicker line (LAN/POE stays dashed), so the type is not
+   conveyed by colour alone. */
+.connection-line--fiber {
+  stroke: var(--map-connection-fiber);
+  stroke-width: 3px;
+  stroke-dasharray: none;
+  stroke-opacity: 0.9;
+}
+/* WiFi/WLAN: round dots (distinct from LAN/POE dashes and solid fiber). */
+.connection-line--wifi {
+  stroke-width: 3px;
+  stroke-dasharray: 0.5 7;
+  stroke-linecap: round;
 }
 .connection-line--active {
   stroke: var(--map-connection-active);

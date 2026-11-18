@@ -53,9 +53,9 @@ function DeviceMarkerImpl({
           showLocation,
           showTypeIcon,
         }),
-        // Pin tip (rotated square's corner) sits ~34px below the box top.
-        iconSize: [28, 34],
-        iconAnchor: [14, 34],
+        // Pin tip (rotated 36px square's corner) sits ~44px below the box top.
+        iconSize: [36, 44],
+        iconAnchor: [18, 44],
       }),
     [
       d.seq,

@@ -1,50 +1,45 @@
-import Link from "next/link";
-import { MapIcon, PlusIcon } from "lucide-react";
 import { getDb } from "@/db";
-import { Button } from "@/components/ui/button";
-import { ZoneCard } from "@/components/zones/zone-card";
+import { AllZonesMap } from "@/components/map";
 import { requireUser } from "@/lib/auth";
 import { id } from "@/lib/i18n/id";
-import { listZoneSummaries } from "@/server/zones";
+import { listAllMapDevices } from "@/server/devices";
+import { listAllExtenders } from "@/server/extenders";
+import { listNetworkSources } from "@/server/network-sources";
+import { listZoneBoundaries, listZoneSummaries } from "@/server/zones";
 
+/**
+ * Root: full-screen satellite map covering every zone. Clicking a zone flies
+ * in and opens its details + devices in a panel.
+ */
 export default async function DashboardPage() {
   const session = await requireUser({ redirectTo: "/login" });
-  const isAdmin = session.user.role === "admin";
-  const zones = await listZoneSummaries(getDb());
+  const db = getDb();
+  const [summaries, extenders, zones, devices, sources] = await Promise.all([
+    listZoneSummaries(db),
+    listAllExtenders(db),
+    listZoneBoundaries(db),
+    listAllMapDevices(db),
+    listNetworkSources(db),
+  ]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{id.dashboard.title}</h1>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/map">
-              <MapIcon />
-              {id.allMap.viewAll}
-            </Link>
-          </Button>
-          {isAdmin && (
-            <Button asChild>
-              <Link href="/zones/new">
-                <PlusIcon />
-                {id.dashboard.newZone}
-              </Link>
-            </Button>
-          )}
-        </div>
+    <main className="flex min-h-0 flex-1 flex-col">
+      <h1 className="sr-only">{id.dashboard.title}</h1>
+      <div className="relative h-[calc(100dvh-3.5rem)]">
+        <AllZonesMap
+          zones={zones}
+          devices={devices}
+          summaries={summaries}
+          extenders={extenders}
+          isAdmin={session.user.role === "admin"}
+          sources={sources.map((s) => ({
+            id: s.id,
+            name: s.name,
+            lat: s.lat,
+            lng: s.lng,
+          }))}
+        />
       </div>
-
-      {zones.length === 0 ? (
-        <p className="text-muted-foreground py-12 text-center">
-          {isAdmin ? id.dashboard.emptyAdmin : id.dashboard.empty}
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {zones.map((zone) => (
-            <ZoneCard key={zone.id} zone={zone} />
-          ))}
-        </div>
-      )}
     </main>
   );
 }

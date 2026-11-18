@@ -46,7 +46,14 @@ import {
   deleteNetworkSourceAction,
   moveNetworkSourcePositionAction,
 } from "@/server/actions/sources";
+import {
+  deleteExtenderAction,
+  moveExtenderPositionAction,
+} from "@/server/actions/extenders";
 import type { ZoneDevice } from "@/server/devices";
+import type { Extender } from "@/server/extenders";
+import { extenderLabel } from "@/lib/validators/extender";
+import { ExtenderPanel } from "./extender-panel";
 import type { NetworkSource, SourceDevice } from "@/server/network-sources";
 import { DeviceDetail } from "./device-detail";
 import { DeviceForm } from "./device-form";
@@ -62,6 +69,7 @@ type Props = {
     zoom: number | null;
   };
   devices: ZoneDevice[];
+  extenders: Extender[];
   types: { id: string; name: string; icon: string }[];
   summary: {
     total: number;
@@ -88,6 +96,16 @@ type Op =
 type SourceOp =
   | { type: "patch"; id: string; patch: Partial<NetworkSource> }
   | { type: "remove"; id: string };
+
+type ExtenderOp =
+  | { type: "patch"; id: string; patch: Partial<Extender> }
+  | { type: "remove"; id: string };
+
+function reduceExtenders(state: Extender[], op: ExtenderOp): Extender[] {
+  return op.type === "remove"
+    ? state.filter((x) => x.id !== op.id)
+    : state.map((x) => (x.id === op.id ? { ...x, ...op.patch } : x));
+}
 
 function reduceSources(state: NetworkSource[], op: SourceOp): NetworkSource[] {
   return op.type === "remove"
@@ -117,6 +135,7 @@ function reduce(state: ZoneDevice[], op: Op): ZoneDevice[] {
 export function ZoneWorkspace({
   zone,
   devices,
+  extenders,
   types,
   summary,
   otherZones,
@@ -131,6 +150,17 @@ export function ZoneWorkspace({
     sources,
     reduceSources,
   );
+  const [optimisticExtenders, applyExtender] = useOptimistic(
+    extenders,
+    reduceExtenders,
+  );
+  const [selectedExtenderId, setSelectedExtenderId] = useState<string | null>(
+    null,
+  );
+  const [extenderDraft, setExtenderDraft] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [, startTransition] = useTransition();
   const [draft, setDraft] = useState<{ lat: number; lng: number } | null>(null);
   const [sourceDraft, setSourceDraft] = useState<{
@@ -156,6 +186,8 @@ export function ZoneWorkspace({
     void useMapStore.persist.rehydrate();
     setDraft(null);
     setSourceDraft(null);
+    setExtenderDraft(null);
+    setSelectedExtenderId(null);
     setEditingSource(false);
     if (initialDeviceId && devices.some((d) => d.id === initialDeviceId)) {
       useMapStore.getState().select(initialDeviceId, { fly: true });
@@ -181,8 +213,16 @@ export function ZoneWorkspace({
     return () => window.removeEventListener("keydown", onKey);
   }, [mode, setMode]);
 
+  const selectedExtender =
+    optimisticExtenders.find((x) => x.id === selectedExtenderId) ?? null;
   const hasPanel = Boolean(
-    draft || sourceDraft || selectedId || selectedSourceId || editingSource,
+    draft ||
+    sourceDraft ||
+    extenderDraft ||
+    selectedExtender ||
+    selectedId ||
+    selectedSourceId ||
+    editingSource,
   );
   // A selection / form opens the sheet; going back to the list (or starting
   // an add / move mode, which needs the map visible) collapses it.
@@ -266,6 +306,7 @@ export function ZoneWorkspace({
         seq: d.seq,
         status: d.status,
         isRouter: d.isRouter,
+        connectionType: d.connectionType,
         lat: d.lat,
         lng: d.lng,
         locationDetail: d.locationDetail,
@@ -285,10 +326,72 @@ export function ZoneWorkspace({
     [zone.boundary],
   );
 
+  const extenderDeviceOptions = useMemo(
+    () =>
+      optimistic.map((d) => ({
+        id: d.id,
+        seq: d.seq,
+        locationDetail: d.locationDetail,
+      })),
+    [optimistic],
+  );
+  const markerExtenders = useMemo(() => {
+    const seqById = new Map(optimistic.map((d) => [d.id, d.seq]));
+    return optimisticExtenders.map((x) => ({
+      id: x.id,
+      lat: x.lat,
+      lng: x.lng,
+      fromDeviceId: x.fromDeviceId,
+      toDeviceId: x.toDeviceId,
+      label: extenderLabel(
+        x.fromDeviceId ? seqById.get(x.fromDeviceId) : null,
+        x.toDeviceId ? seqById.get(x.toDeviceId) : null,
+      ),
+    }));
+  }, [optimistic, optimisticExtenders]);
+
+  const onSelectExtender = useCallback(
+    (extenderId: string) => {
+      setDraft(null);
+      setSourceDraft(null);
+      setExtenderDraft(null);
+      setEditingSource(false);
+      select(null);
+      selectSource(null);
+      setSelectedExtenderId(extenderId);
+    },
+    [select, selectSource],
+  );
+
+  const onExtenderMoved = useCallback(
+    (extenderId: string, lat: number, lng: number) => {
+      warnIfOutside({ lat, lng });
+      startTransition(async () => {
+        applyExtender({ type: "patch", id: extenderId, patch: { lat, lng } });
+        const res = await moveExtenderPositionAction(extenderId, { lat, lng });
+        if (!res.ok) toast.error(res.error);
+        else toast.success(id.extender.moved);
+      });
+    },
+    [applyExtender, warnIfOutside],
+  );
+
+  function onDeleteExtender(extenderId: string) {
+    startTransition(async () => {
+      setSelectedExtenderId(null);
+      applyExtender({ type: "remove", id: extenderId });
+      const res = await deleteExtenderAction(extenderId);
+      if (!res.ok) toast.error(res.error);
+      else toast.success(id.extender.deleted);
+    });
+  }
+
   const onSelectMarker = useCallback(
     (deviceId: string) => {
       setDraft(null);
       setSourceDraft(null);
+      setExtenderDraft(null);
+      setSelectedExtenderId(null);
       setEditingSource(false);
       select(deviceId);
     },
@@ -299,6 +402,8 @@ export function ZoneWorkspace({
     (sourceId: string) => {
       setDraft(null);
       setSourceDraft(null);
+      setExtenderDraft(null);
+      setSelectedExtenderId(null);
       setEditingSource(false);
       selectSource(sourceId);
     },
@@ -345,13 +450,21 @@ export function ZoneWorkspace({
       selectSource(null);
       setMode("idle");
       setEditingSource(false);
+      setSelectedExtenderId(null);
       if (adding === "addSource") {
         // A source may sit between zones: no out-of-zone warning.
         setDraft(null);
+        setExtenderDraft(null);
         setSourceDraft(pos);
+      } else if (adding === "addExtender") {
+        warnIfOutside(pos);
+        setDraft(null);
+        setSourceDraft(null);
+        setExtenderDraft(pos);
       } else {
         warnIfOutside(pos);
         setSourceDraft(null);
+        setExtenderDraft(null);
         setDraft(pos);
       }
     },
@@ -425,6 +538,7 @@ export function ZoneWorkspace({
           patch: {
             deviceTypeId: input.deviceTypeId,
             isRouter: input.isRouter,
+            connectionType: input.connectionType,
             locationDetail: input.locationDetail,
             notes: input.notes,
             networkSourceId: input.networkSourceId,
@@ -489,7 +603,8 @@ export function ZoneWorkspace({
   }
 
   const nextSeq = optimistic.length + 1;
-  const adding = mode === "addDevice" || mode === "addSource";
+  const adding =
+    mode === "addDevice" || mode === "addSource" || mode === "addExtender";
   const moving = mode === "move";
   const zoneChoices = [{ id: zone.id, name: zone.name }, ...otherZones];
 
@@ -540,6 +655,11 @@ export function ZoneWorkspace({
             sources={markerSources}
             draft={draft ? { ...draft, seq: nextSeq } : null}
             sourceDraft={sourceDraft}
+            extenders={markerExtenders}
+            selectedExtenderId={selectedExtenderId}
+            extenderDraft={extenderDraft}
+            onSelectExtender={onSelectExtender}
+            onExtenderMoved={onExtenderMoved}
             canEdit={isAdmin}
             onSelect={onSelectMarker}
             onMoved={onMoved}
@@ -574,7 +694,9 @@ export function ZoneWorkspace({
                     ? id.mobile.moveHint
                     : mode === "addSource"
                       ? id.source.addHint
-                      : id.device.addHint}
+                      : mode === "addExtender"
+                        ? id.extender.addHint
+                        : id.device.addHint}
                 </span>
                 <Button
                   type="button"
@@ -615,7 +737,35 @@ export function ZoneWorkspace({
               aria-hidden
             />
           </button>
-          {sourceDraft || (editingSource && selectedSource) ? (
+          {extenderDraft || selectedExtender ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <ExtenderPanel
+                key={
+                  selectedExtender
+                    ? `edit:${selectedExtender.id}:${selectedExtender.updatedAt.getTime()}`
+                    : `new:${extenderDraft?.lat}:${extenderDraft?.lng}`
+                }
+                zoneId={zone.id}
+                devices={extenderDeviceOptions}
+                position={extenderDraft ?? undefined}
+                extender={selectedExtender ?? undefined}
+                isAdmin={isAdmin}
+                onSaved={(x) => {
+                  setExtenderDraft(null);
+                  setSelectedExtenderId(x.id);
+                }}
+                onBack={() => {
+                  setExtenderDraft(null);
+                  setSelectedExtenderId(null);
+                }}
+                onDelete={
+                  selectedExtender
+                    ? () => onDeleteExtender(selectedExtender.id)
+                    : undefined
+                }
+              />
+            </div>
+          ) : sourceDraft || (editingSource && selectedSource) ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               {sourceDraft ? (
                 <SourceForm
@@ -717,6 +867,7 @@ export function ZoneWorkspace({
               onSelect={onSelectFromList}
               onAdd={() => setMode("addDevice")}
               onAddSource={() => setMode("addSource")}
+              onAddExtender={() => setMode("addExtender")}
               onAddHere={onAddHere}
             />
           )}

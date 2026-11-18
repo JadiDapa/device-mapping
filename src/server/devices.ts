@@ -141,6 +141,24 @@ async function resolveParent(
   return opts.parentDeviceId;
 }
 
+/**
+ * One uplink per device: a router connects to a network source; any other
+ * device (e.g. BLE only) connects to a router OR directly to a source. A
+ * router parent wins over a source.
+ */
+async function uplink(
+  tx: Tx | Database,
+  opts: Parameters<typeof resolveParent>[1] & {
+    networkSourceId: string | null;
+  },
+): Promise<{ parentDeviceId: string | null; networkSourceId: string | null }> {
+  const parentDeviceId = await resolveParent(tx, opts);
+  return {
+    parentDeviceId,
+    networkSourceId: parentDeviceId ? null : opts.networkSourceId,
+  };
+}
+
 function snapshotOf(d: {
   hasPower: boolean;
   hasFo: boolean;
@@ -197,6 +215,7 @@ export type MapDevice = {
   seq: number;
   status: Device["status"];
   isRouter: boolean;
+  connectionType: Device["connectionType"];
   lat: number;
   lng: number;
   locationDetail: string | null;
@@ -213,6 +232,7 @@ export async function listAllMapDevices(db: Database): Promise<MapDevice[]> {
       seq: devices.seq,
       status: devices.status,
       isRouter: devices.isRouter,
+      connectionType: devices.connectionType,
       lat: devices.lat,
       lng: devices.lng,
       locationDetail: devices.locationDetail,
@@ -268,16 +288,17 @@ export async function createDevice(
           seq: await nextSeq(tx, input.zoneId),
           deviceTypeId: input.deviceTypeId,
           isRouter: input.isRouter,
+          connectionType: input.connectionType,
           lat: input.lat,
           lng: input.lng,
           locationDetail: input.locationDetail,
           notes: input.notes,
-          networkSourceId: input.networkSourceId,
-          parentDeviceId: await resolveParent(tx, {
+          ...(await uplink(tx, {
             zoneId: input.zoneId,
             isRouter: input.isRouter,
             parentDeviceId: input.parentDeviceId,
-          }),
+            networkSourceId: input.networkSourceId,
+          })),
           status: input.status,
           hasPower: input.hasPower,
           hasFo: input.hasFo,
@@ -313,10 +334,11 @@ export async function updateDevice(
   if (!existing) throw new DeviceNotFoundError();
   try {
     return await db.transaction(async (tx) => {
-      const parentDeviceId = await resolveParent(tx, {
+      const link = await uplink(tx, {
         zoneId: existing.zoneId,
         isRouter: input.isRouter,
         parentDeviceId: input.parentDeviceId,
+        networkSourceId: input.networkSourceId,
         selfId: id,
       });
       const [row] = await tx
@@ -324,10 +346,10 @@ export async function updateDevice(
         .set({
           deviceTypeId: input.deviceTypeId,
           isRouter: input.isRouter,
+          connectionType: input.connectionType,
           locationDetail: input.locationDetail,
           notes: input.notes,
-          networkSourceId: input.networkSourceId,
-          parentDeviceId,
+          ...link,
           updatedBy: userId,
         })
         .where(eq(devices.id, id))

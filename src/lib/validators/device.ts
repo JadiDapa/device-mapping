@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONNECTION_TYPES, DEFAULT_CONNECTION_TYPE } from "@/lib/connection";
 import { id } from "@/lib/i18n/id";
 import { DEVICE_STATUSES } from "@/lib/status";
 
@@ -60,6 +61,7 @@ export const deviceStatusSchema = z
 const detailFields = {
   deviceTypeId: uuid,
   isRouter: z.boolean().default(false),
+  connectionType: z.enum(CONNECTION_TYPES).default(DEFAULT_CONNECTION_TYPE),
   locationDetail: optionalText(200, id.device.locationDetailTooLong),
   notes: optionalText(2000, id.device.notesTooLong),
   /** Optional link to a network source ("" from a select means none). */

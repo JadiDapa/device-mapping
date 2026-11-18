@@ -130,6 +130,7 @@ describe("seedAdminAndDefaults", () => {
     const types = await t.db.select().from(deviceTypes);
     expect(types.map((x) => x.name).sort()).toEqual([
       "BLE Receiver",
+      "CCTV",
       "Gateway",
     ]);
   });

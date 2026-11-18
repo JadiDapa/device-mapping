@@ -67,9 +67,11 @@ export async function addDevice(
 export async function deleteZone(page: Page, zoneName: string) {
   await page.goto("/");
   await page
-    .getByRole("link", { name: new RegExp(zoneName) })
+    .getByTestId("zone-explorer-panel")
+    .getByRole("button", { name: new RegExp(zoneName) })
     .first()
     .click();
+  await page.getByRole("link", { name: "Buka zona" }).click();
   await page.getByRole("link", { name: "Edit" }).click();
   await page.getByRole("button", { name: "Hapus zona" }).click();
   await page.getByLabel(/Ketik nama zona/).fill(zoneName);

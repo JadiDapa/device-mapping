@@ -10,6 +10,8 @@ import { DrawControl } from "./draw-control";
 import { FitBounds } from "./fit-bounds";
 import { ZoneBoundary } from "./zone-boundary";
 
+const OVERZOOM = 3;
+
 type Props = {
   /** Saved boundary: drawn read-only (or as the editor's seed) and fitted to. */
   boundary: GeoJsonPolygon | null;
@@ -41,14 +43,16 @@ export default function MapView({
     <MapContainer
       center={[view.lat, view.lng]}
       zoom={zoom ?? publicEnv.defaultZoom}
-      maxZoom={publicEnv.tileMaxZoom}
+      // Allow zooming past the last native tile level (tiles are upscaled).
+      maxZoom={publicEnv.tileMaxZoom + OVERZOOM}
       scrollWheelZoom
       className={cn("size-full min-h-64 rounded-lg", className)}
     >
       <TileLayer
         url={publicEnv.tileUrl}
         attribution={publicEnv.tileAttribution}
-        maxZoom={publicEnv.tileMaxZoom}
+        maxNativeZoom={publicEnv.tileMaxZoom}
+        maxZoom={publicEnv.tileMaxZoom + OVERZOOM}
       />
       <FitBounds boundary={boundary} />
       {onBoundaryChange ? (

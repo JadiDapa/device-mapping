@@ -26,12 +26,14 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { CONNECTION_TYPES } from "../lib/connection-types";
 import { DEVICE_STATUSES } from "../lib/status";
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
 
 export const deviceStatus = pgEnum("device_status", DEVICE_STATUSES);
+export const connectionType = pgEnum("connection_type", CONNECTION_TYPES);
 
 const id = () => uuid("id").primaryKey().defaultRandom();
 const createdAt = () =>
@@ -95,6 +97,10 @@ export const devices = pgTable(
       .notNull()
       .references(() => deviceTypes.id),
     isRouter: boolean("is_router").default(false).notNull(),
+    /** Wiring to the parent router (or source, for a router). */
+    connectionType: connectionType("connection_type")
+      .default("lan_poe")
+      .notNull(),
     lat: doublePrecision("lat").notNull(),
     lng: doublePrecision("lng").notNull(),
     locationDetail: text("location_detail"),
@@ -124,6 +130,37 @@ export const devices = pgTable(
     index("devices_parent_device_id_idx").on(t.parentDeviceId),
     index("devices_network_source_id_idx").on(t.networkSourceId),
   ],
+);
+
+/**
+ * Extender (signal repeater) between two devices of the same zone. It is not
+ * a numbered device: no seq, no status, not counted in summaries. Its pin
+ * reads "<from seq>→<to seq>", derived from the relations at render time.
+ */
+export const extenders = pgTable(
+  "extenders",
+  {
+    id: id(),
+    zoneId: uuid("zone_id")
+      .notNull()
+      .references(() => zones.id, { onDelete: "cascade" }),
+    fromDeviceId: uuid("from_device_id").references(() => devices.id, {
+      onDelete: "set null",
+    }),
+    toDeviceId: uuid("to_device_id").references(() => devices.id, {
+      onDelete: "set null",
+    }),
+    lat: doublePrecision("lat").notNull(),
+    lng: doublePrecision("lng").notNull(),
+    locationDetail: text("location_detail"),
+    notes: text("notes"),
+    updatedBy: uuid("updated_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("extenders_zone_id_idx").on(t.zoneId)],
 );
 
 export type StatusSnapshot = {

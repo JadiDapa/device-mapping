@@ -5,6 +5,7 @@ import { ZoneWorkspace } from "@/components/devices/zone-workspace";
 import { requireUser } from "@/lib/auth";
 import { listDeviceTypes } from "@/server/device-types";
 import { listZoneDevices } from "@/server/devices";
+import { listZoneExtenders } from "@/server/extenders";
 import {
   listForeignSourceDevices,
   listSourceKinds,
@@ -28,15 +29,23 @@ export default async function ZonePage({
   const zone = await getZone(db, zoneId);
   if (!zone) notFound();
 
-  const [devices, types, summary, zoneOptions, sources, sourceKinds] =
-    await Promise.all([
-      listZoneDevices(db, zoneId),
-      listDeviceTypes(db),
-      getZoneSummary(db, zoneId),
-      listZoneOptions(db),
-      listSourcesForZone(db, zoneId),
-      listSourceKinds(db),
-    ]);
+  const [
+    devices,
+    extenders,
+    types,
+    summary,
+    zoneOptions,
+    sources,
+    sourceKinds,
+  ] = await Promise.all([
+    listZoneDevices(db, zoneId),
+    listZoneExtenders(db, zoneId),
+    listDeviceTypes(db),
+    getZoneSummary(db, zoneId),
+    listZoneOptions(db),
+    listSourcesForZone(db, zoneId),
+    listSourceKinds(db),
+  ]);
   const foreignSourceDevices = await listForeignSourceDevices(
     db,
     zoneId,
@@ -60,6 +69,7 @@ export default async function ZonePage({
           zoom: zone.defaultZoom,
         }}
         devices={devices}
+        extenders={extenders}
         types={types.map((t) => ({ id: t.id, name: t.name, icon: t.icon }))}
         summary={
           summary ?? {

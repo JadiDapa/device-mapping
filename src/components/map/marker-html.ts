@@ -15,7 +15,7 @@ export type MarkerHtmlInput = {
   showTypeIcon: boolean;
 };
 
-const ICON_PROPS = { size: 11, strokeWidth: 2.5, "aria-hidden": true } as const;
+const ICON_PROPS = { size: 9, strokeWidth: 2.5, "aria-hidden": true } as const;
 const svgCache = new Map<string, string>();
 
 function svg(key: string, make: () => React.ReactElement): string {
@@ -37,14 +37,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * HTML for a device's `L.divIcon`: a numbered circle filled with the status
+ * HTML for a device's `L.divIcon`: a numbered map pin filled with the status
  * colour (from lib/status.ts), an optional router badge (top-right), type-icon
  * badge (bottom-left) and location label (below). Every other colour comes
  * from CSS variables in globals.css (`.device-marker*`).
  */
 export function buildMarkerHtml(m: MarkerHtmlInput): string {
   const parts = [
-    `<span class="device-marker__dot" aria-hidden="true">${m.seq}</span>`,
+    `<span class="device-marker__dot" aria-hidden="true"><span class="device-marker__num">${m.seq}</span></span>`,
   ];
   if (m.isRouter) {
     parts.push(
@@ -67,9 +67,13 @@ export function buildMarkerHtml(m: MarkerHtmlInput): string {
       `<span class="device-marker__label">${escapeHtml(m.locationDetail)}</span>`,
     );
   }
-  const cls = m.selected
-    ? "device-marker device-marker--selected"
-    : "device-marker";
+  const cls = [
+    "device-marker",
+    m.selected && "device-marker--selected",
+    m.status === "partial" && "device-marker--partial",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     `<div class="${cls}" data-testid="device-marker" data-seq="${m.seq}" ` +
     `data-status="${m.status}" data-label="${escapeHtml(statusLabel[m.status])}" ` +

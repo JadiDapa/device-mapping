@@ -46,6 +46,7 @@ describe("network sources data layer", () => {
     locationDetail: null,
     notes: null,
     networkSourceId: null,
+    parentDeviceId: null,
     lat: -3,
     lng: 104.8,
     status: "not_installed",
@@ -127,6 +128,7 @@ describe("network sources data layer", () => {
         locationDetail: null,
         notes: null,
         networkSourceId: null,
+        parentDeviceId: null,
       },
       userId,
     );

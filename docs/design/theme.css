@@ -1,0 +1,281 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Theme based on the reference: deep teal surfaces, soft lime accent,
+ * clean white / off-white sections, pill buttons, medium-rounded cards,
+ * friendly geometric headings.
+ *
+ * Fonts: load "DM Sans" (400–700) and "JetBrains Mono" via next/font or a
+ * <link> to Google Fonts. Use rounded-full on buttons/badges for the pill look.
+ */
+
+:root {
+  /* Surfaces */
+  --background: oklch(1 0 0); /* #FFFFFF */
+  --foreground: oklch(0.31 0.04 222); /* #1A3640 deep teal text */
+  --card: oklch(0.97 0.004 100); /* #F6F6F3 off-white section/card */
+  --card-foreground: oklch(0.31 0.04 222);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.31 0.04 222);
+
+  /* Brand */
+  --primary: oklch(0.91 0.145 120.5); /* #D4F07C soft lime — CTAs, icons */
+  --primary-foreground: oklch(0.26 0.038 222); /* deep teal on lime */
+  --secondary: oklch(
+    0.313 0.042 221
+  ); /* #163640 deep teal — dark cards/buttons */
+  --secondary-foreground: oklch(0.985 0.002 100);
+
+  /* Supporting */
+  --muted: oklch(0.96 0.005 210); /* #F1F4F4 */
+  --muted-foreground: oklch(0.52 0.02 220); /* #5B6B70 body copy */
+  --accent: oklch(0.975 0.04 120); /* #F2F9DC lime-tint chips ("About Us") */
+  --accent-foreground: oklch(0.31 0.04 222);
+  --destructive: oklch(0.577 0.2074 26.7117);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Lines & focus */
+  --border: oklch(0.92 0.008 210); /* #E3E8E9 */
+  --input: oklch(0.92 0.008 210);
+  --ring: oklch(
+    0.83 0.14 121
+  ); /* slightly deeper lime so focus shows on white */
+
+  /* Charts */
+  --chart-1: oklch(0.313 0.042 221); /* deep teal */
+  --chart-2: oklch(0.91 0.145 120.5); /* lime */
+  --chart-3: oklch(0.52 0.05 215); /* mid teal */
+  --chart-4: oklch(0.78 0.13 122); /* deeper lime */
+  --chart-5: oklch(0.74 0.025 215); /* slate grey */
+
+  /* Sidebar (deep teal, like the hero) */
+  --sidebar: oklch(0.26 0.038 222); /* #0F2A33 */
+  --sidebar-foreground: oklch(0.985 0.002 100);
+  --sidebar-primary: oklch(0.91 0.145 120.5);
+  --sidebar-primary-foreground: oklch(0.26 0.038 222);
+  --sidebar-accent: oklch(0.34 0.045 218); /* #1F434C service-card teal */
+  --sidebar-accent-foreground: oklch(0.985 0.002 100);
+  --sidebar-border: oklch(0.36 0.04 218);
+  --sidebar-ring: oklch(0.91 0.145 120.5);
+
+  /* Typography */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
+  --tracking-normal: 0em;
+
+  /* Shape — medium-rounded cards; use rounded-full for pills */
+  --radius: 1rem;
+
+  /* Shadows — soft, teal-tinted */
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.06;
+  --shadow-color: #163640;
+  --shadow-2xs: 0px 1px 3px 0px hsl(194 49% 17% / 0.03);
+  --shadow-xs: 0px 1px 4px 0px hsl(194 49% 17% / 0.04);
+  --shadow-sm:
+    0px 2px 8px 0px hsl(194 49% 17% / 0.06),
+    0px 1px 2px -1px hsl(194 49% 17% / 0.06);
+  --shadow:
+    0px 4px 12px 0px hsl(194 49% 17% / 0.06),
+    0px 1px 3px -1px hsl(194 49% 17% / 0.06);
+  --shadow-md:
+    0px 6px 16px 0px hsl(194 49% 17% / 0.07),
+    0px 2px 4px -2px hsl(194 49% 17% / 0.06);
+  --shadow-lg:
+    0px 10px 28px -4px hsl(194 49% 17% / 0.1),
+    0px 4px 8px -4px hsl(194 49% 17% / 0.06);
+  --shadow-xl:
+    0px 18px 44px -8px hsl(194 49% 17% / 0.12),
+    0px 8px 16px -8px hsl(194 49% 17% / 0.08);
+  --shadow-2xl: 0px 28px 64px -12px hsl(194 49% 17% / 0.22);
+
+  --spacing: 0.25rem;
+}
+
+.dark {
+  /* Surfaces — built from the hero and the dark service strip */
+  --background: oklch(0.22 0.033 222); /* #0B1F26 */
+  --foreground: oklch(0.97 0.004 100); /* #F6F6F3 */
+  --card: oklch(0.28 0.04 220); /* #15333C */
+  --card-foreground: oklch(0.97 0.004 100);
+  --popover: oklch(0.28 0.04 220);
+  --popover-foreground: oklch(0.97 0.004 100);
+
+  /* Brand — lime stays the hero */
+  --primary: oklch(0.91 0.145 120.5);
+  --primary-foreground: oklch(0.22 0.033 222);
+  --secondary: oklch(0.34 0.045 218); /* #1F434C */
+  --secondary-foreground: oklch(0.97 0.004 100);
+
+  /* Supporting */
+  --muted: oklch(0.3 0.038 220);
+  --muted-foreground: oklch(0.75 0.02 215); /* #A6B4B8 */
+  --accent: oklch(0.34 0.06 160); /* teal leaning toward lime for hovers */
+  --accent-foreground: oklch(0.91 0.145 120.5);
+  --destructive: oklch(0.6547 0.1943 24.23);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Lines & focus */
+  --border: oklch(0.36 0.035 220);
+  --input: oklch(0.39 0.035 220);
+  --ring: oklch(0.91 0.145 120.5);
+
+  /* Charts */
+  --chart-1: oklch(0.91 0.145 120.5);
+  --chart-2: oklch(0.65 0.07 210);
+  --chart-3: oklch(0.97 0.004 100);
+  --chart-4: oklch(0.78 0.13 122);
+  --chart-5: oklch(0.52 0.04 215);
+
+  /* Sidebar */
+  --sidebar: oklch(0.19 0.03 222);
+  --sidebar-foreground: oklch(0.97 0.004 100);
+  --sidebar-primary: oklch(0.91 0.145 120.5);
+  --sidebar-primary-foreground: oklch(0.22 0.033 222);
+  --sidebar-accent: oklch(0.29 0.04 220);
+  --sidebar-accent-foreground: oklch(0.97 0.004 100);
+  --sidebar-border: oklch(0.32 0.035 220);
+  --sidebar-ring: oklch(0.91 0.145 120.5);
+
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
+  --tracking-normal: 0em;
+  --radius: 1rem;
+
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.3;
+  --shadow-color: #000000;
+  --shadow-2xs: 0px 1px 3px 0px hsl(200 60% 4% / 0.15);
+  --shadow-xs: 0px 1px 4px 0px hsl(200 60% 4% / 0.18);
+  --shadow-sm:
+    0px 2px 8px 0px hsl(200 60% 4% / 0.25),
+    0px 1px 2px -1px hsl(200 60% 4% / 0.25);
+  --shadow:
+    0px 4px 12px 0px hsl(200 60% 4% / 0.28),
+    0px 1px 3px -1px hsl(200 60% 4% / 0.25);
+  --shadow-md:
+    0px 6px 16px 0px hsl(200 60% 4% / 0.3),
+    0px 2px 4px -2px hsl(200 60% 4% / 0.25);
+  --shadow-lg:
+    0px 10px 28px -4px hsl(200 60% 4% / 0.35),
+    0px 4px 8px -4px hsl(200 60% 4% / 0.25);
+  --shadow-xl:
+    0px 18px 44px -8px hsl(200 60% 4% / 0.4),
+    0px 8px 16px -8px hsl(200 60% 4% / 0.3);
+  --shadow-2xl: 0px 28px 64px -12px hsl(200 60% 4% / 0.55);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 6px); /* 10px — inputs, small chips */
+  --radius-md: calc(var(--radius) - 4px); /* 12px — buttons, image tiles */
+  --radius-lg: var(--radius); /* 16px — cards */
+  --radius-xl: calc(var(--radius) + 8px); /* 24px — hero panels */
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.04em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.02em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    letter-spacing: var(--tracking-normal);
+    line-height: 1.6;
+  }
+
+  /* Clear, medium-weight headings like "Where The Expertise Creates Excellence" */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-foreground font-semibold tracking-tight;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+    line-height: 1.25;
+  }
+
+  h4 {
+    @apply text-lg;
+    line-height: 1.3;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}

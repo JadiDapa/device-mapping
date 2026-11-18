@@ -1,12 +1,15 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/** Kelas untuk kartu yang melayang di atas peta. */
+export const mapOverlayClass = "bg-card/85 backdrop-blur shadow-md";
+
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-lg border py-6 shadow-sm",
         className,
       )}
       {...props}
@@ -31,7 +34,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("text-base leading-none font-semibold", className)}
       {...props}
     />
   );

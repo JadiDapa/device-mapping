@@ -5,6 +5,7 @@ import { deviceTypes } from "./schema";
 export const DEFAULT_DEVICE_TYPES = [
   { name: "Gateway", icon: "radio" },
   { name: "BLE Receiver", icon: "bluetooth" },
+  { name: "CCTV", icon: "cctv" },
 ] as const;
 
 export async function seedDeviceTypes(db: Database): Promise<void> {

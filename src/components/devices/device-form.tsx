@@ -24,6 +24,7 @@ import {
 import { createDeviceAction } from "@/server/actions/devices";
 import type { Device } from "@/server/devices";
 import { PartialFields } from "./partial-fields";
+import { ParentSelect, type RouterOption } from "./parent-select";
 import { SourceSelect, type SourceOption } from "./source-select";
 import { StatusSegmented } from "./status-segmented";
 
@@ -36,6 +37,7 @@ export function DeviceForm({
   nextSeq,
   types,
   sources,
+  routers,
   onCreated,
   onCancel,
 }: {
@@ -44,6 +46,7 @@ export function DeviceForm({
   nextSeq: number;
   types: TypeOption[];
   sources: SourceOption[];
+  routers: RouterOption[];
   onCreated: (device: Device) => void;
   onCancel: () => void;
 }) {
@@ -57,6 +60,7 @@ export function DeviceForm({
         locationDetail: "",
         notes: "",
         networkSourceId: "",
+        parentDeviceId: "",
         lat: position.lat,
         lng: position.lng,
         status: "not_installed",
@@ -181,13 +185,22 @@ export function DeviceForm({
             </Field>
           )}
         />
-        <SourceSelect
-          htmlId="new-device-source"
-          value={watch("networkSourceId")}
-          onChange={(v) => setValue("networkSourceId", v)}
-          sources={sources}
-          zoneId={zoneId}
-        />
+        {watch("isRouter") === true ? (
+          <SourceSelect
+            htmlId="new-device-source"
+            value={watch("networkSourceId")}
+            onChange={(v) => setValue("networkSourceId", v)}
+            sources={sources}
+            zoneId={zoneId}
+          />
+        ) : (
+          <ParentSelect
+            htmlId="new-device-parent"
+            value={watch("parentDeviceId")}
+            onChange={(v) => setValue("parentDeviceId", v)}
+            routers={routers}
+          />
+        )}
         <Field>
           <FieldLabel>{id.device.status}</FieldLabel>
           <StatusSegmented

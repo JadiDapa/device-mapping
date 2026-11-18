@@ -14,6 +14,7 @@
  */
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   doublePrecision,
   index,
@@ -107,6 +108,11 @@ export const devices = pgTable(
       () => networkSources.id,
       { onDelete: "set null" },
     ),
+    /** Router+BLE this device hangs off (chain: source -> router -> device). */
+    parentDeviceId: uuid("parent_device_id").references(
+      (): AnyPgColumn => devices.id,
+      { onDelete: "set null" },
+    ),
     updatedBy: uuid("updated_by").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -115,6 +121,7 @@ export const devices = pgTable(
   },
   (t) => [
     index("devices_zone_id_idx").on(t.zoneId),
+    index("devices_parent_device_id_idx").on(t.parentDeviceId),
     index("devices_network_source_id_idx").on(t.networkSourceId),
   ],
 );

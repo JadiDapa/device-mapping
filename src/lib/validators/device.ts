@@ -67,6 +67,11 @@ const detailFields = {
     .union([uuid, z.literal("")])
     .nullish()
     .transform((v) => (v ? v : null)),
+  /** Optional Router+BLE this device connects to ("" = none). */
+  parentDeviceId: z
+    .union([uuid, z.literal("")])
+    .nullish()
+    .transform((v) => (v ? v : null)),
 };
 
 /** Edit of the non-status fields. Status goes through setDeviceStatus. */

@@ -16,18 +16,18 @@ describe("lib/status", () => {
     ]);
   });
 
-  it("maps every status to the PRD §4 colour", () => {
+  it("maps every status to its CSS token", () => {
     expect(statusColor).toEqual({
-      not_installed: "#9CA3AF",
-      partial: "#F59E0B",
-      installed_untested: "#3B82F6",
-      tested: "#16A34A",
+      not_installed: "var(--status-not-installed)",
+      partial: "var(--status-partial)",
+      installed_untested: "var(--status-installed-untested)",
+      tested: "var(--status-tested)",
     });
   });
 
-  it("gives every status a valid hex colour and a non-empty label", () => {
+  it("gives every status a token colour and a non-empty label", () => {
     for (const status of DEVICE_STATUSES) {
-      expect(statusColor[status]).toMatch(/^#[0-9A-F]{6}$/);
+      expect(statusColor[status]).toMatch(/^var\(--status-[a-z-]+\)$/);
       expect(statusLabel[status].length).toBeGreaterThan(0);
     }
   });

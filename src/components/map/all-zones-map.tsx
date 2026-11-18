@@ -19,6 +19,7 @@ type MapZone = { id: string; name: string; boundary: GeoJsonPolygon | null };
 type MapDevice = MarkerDevice & {
   zoneId: string;
   networkSourceId: string | null;
+  parentDeviceId: string | null;
 };
 
 type Props = {

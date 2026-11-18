@@ -14,11 +14,15 @@ describe("seedDeviceTypes", () => {
     await t.close();
   });
 
-  it("creates Gateway (radio) and BLE Receiver (bluetooth)", async () => {
+  it("creates Gateway, BLE Receiver and CCTV with their icons", async () => {
     await seedDeviceTypes(t.db);
     const rows = await t.db.select().from(deviceTypes);
     const byName = Object.fromEntries(rows.map((r) => [r.name, r.icon]));
-    expect(byName).toEqual({ Gateway: "radio", "BLE Receiver": "bluetooth" });
+    expect(byName).toEqual({
+      Gateway: "radio",
+      "BLE Receiver": "bluetooth",
+      CCTV: "cctv",
+    });
   });
 
   it("is idempotent", async () => {

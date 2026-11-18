@@ -1,7 +1,9 @@
 # Device Mapper
 
 Pemetaan & progres instalasi perangkat di peta satelit, per zona.
-**Spesifikasi lengkap: `docs/PRD.md` — baca sebelum mengerjakan fitur.**
+**Spesifikasi lengkap: `docs/PRD.md` + addendum `docs/PRD-M8-ui-polish.md` (M8: design system & UI/UX) — baca sebelum mengerjakan fitur.**
+Design system SUDAH didefinisikan: token di `docs/design/theme.css` (sumber kebenaran) + penyesuaian PRD-M8 §1.1 A–E
+(sudah diterapkan di `src/app/globals.css`). Progres M8: `docs/M8-progress.md`.
 Milestone berurutan (PRD §12); tiap milestone lolos `typecheck` + `format:check` sebelum lanjut.
 
 ## Stack
@@ -26,10 +28,17 @@ src/lib/{status.ts,auth.ts,env.ts,validators/,i18n/id.ts} · src/server/{actions
 ## Aturan wajib
 
 - Next.js 16: `proxy.ts`, bukan `middleware.ts`. Node >= 22, ESM.
-- Semua teks UI di `src/lib/i18n/id.ts` (Bahasa Indonesia) — jangan inline string.
+- Semua teks UI di `src/lib/i18n/` (Bahasa Indonesia) — jangan inline string. `id.ts` adalah entri tunggal;
+  modul per area (`shell.ts`, `dashboard.ts`, `states.ts`, `workspace.ts`, `panel.ts`, `mobile-ui.ts`, `export-ui.ts`)
+  digabung ke objek `id`.
 - Timezone `Asia/Jakarta`; format tanggal `dd MMM yyyy HH:mm` WIB via date-fns + @date-fns/tz.
-- Status: enum/label/warna HANYA di `src/lib/status.ts`. Tidak ada warna hardcode di komponen
-  selain lewat file itu; warna lain lewat CSS variables/token.
+- Status: enum/label/warna HANYA di `src/lib/status.ts` (merujuk token `--status-*` di globals.css).
+  Tidak ada warna hardcode (hex/rgb) di luar `globals.css`/`theme.css` dan `status.ts` (dijaga test); warna lain lewat token.
+- Design system M8: lime sebagai TEKS/ikon dilarang di permukaan terang (PRD-M8 §1.1 B); fokus = `outline-ring` penuh;
+  skala heading aplikasi (h1 `text-2xl`, section `text-lg`, card title `text-base font-semibold`); tombol/badge `rounded-full`.
+- `/print/*` selalu tema terang. Font via `next/font/google` (DM Sans, JetBrains Mono).
+- A11y: `@axe-core/playwright`, 0 pelanggaran serious/critical (terang & gelap). Screenshot QA: `npm run screenshots` → `docs/screenshots/`.
+- Subagent tidak boleh `npm install`; dependensi baru dipasang orchestrator.
 - Otorisasi di server pada SETIAP Server Action / Route Handler (`requireUser()` / `requireAdmin()`);
   guest yang memanggil mutasi → 403. `proxy.ts` hanya optimistic.
 - Mutasi = Server Actions; export = Route Handlers. Skema Zod di `src/lib/validators/` dipakai

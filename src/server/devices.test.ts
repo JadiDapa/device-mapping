@@ -69,6 +69,7 @@ describe("devices data layer", () => {
       locationDetail: null,
       notes: null,
       networkSourceId: null,
+      parentDeviceId: null,
       lat: -2.9,
       lng: 104.1,
       status: "not_installed",
@@ -413,6 +414,7 @@ describe("devices data layer", () => {
           locationDetail: "Lantai 2",
           notes: "n",
           networkSourceId: null,
+          parentDeviceId: null,
         },
         userId,
       );
@@ -438,6 +440,7 @@ describe("devices data layer", () => {
           locationDetail: "baru",
           notes: null,
           networkSourceId: null,
+          parentDeviceId: null,
           expectedUpdatedAt: d.updatedAt.toISOString(),
         },
         userId,

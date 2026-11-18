@@ -74,7 +74,7 @@ test("admin: zone -> 3 devices -> reorder -> partial status", async ({
 
   const marker = page.locator('[data-testid="device-marker"][data-seq="1"]');
   await expect(marker).toHaveAttribute("data-status", "partial");
-  await expect(marker).toHaveAttribute("style", /#F59E0B/i);
+  await expect(marker).toHaveAttribute("style", /var\(--status-partial\)/);
 
   await page.getByRole("tab", { name: "Riwayat" }).click();
   await expect(page.getByTestId("history-entry")).toHaveCount(2);

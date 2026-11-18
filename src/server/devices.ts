@@ -44,6 +44,13 @@ export class ReorderMismatchError extends Error {
   }
 }
 
+export class InvalidParentError extends Error {
+  constructor() {
+    super("INVALID_PARENT");
+    this.name = "InvalidParentError";
+  }
+}
+
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type Device = typeof devices.$inferSelect;
@@ -102,6 +109,36 @@ function mapFkError(error: unknown): never {
     throw new DeviceTypeNotFoundError();
   }
   throw error;
+}
+
+/**
+ * Chain rule: source -> router(+BLE) -> device. A router connects to a
+ * network source, never to another device; any other device may connect to a
+ * router in the SAME zone. Returns the parent id to store (null when none).
+ */
+async function resolveParent(
+  tx: Tx | Database,
+  opts: {
+    zoneId: string;
+    isRouter: boolean;
+    parentDeviceId: string | null;
+    selfId?: string;
+  },
+): Promise<string | null> {
+  if (opts.isRouter || !opts.parentDeviceId) return null;
+  const [parent] = await tx
+    .select({ zoneId: devices.zoneId, isRouter: devices.isRouter })
+    .from(devices)
+    .where(eq(devices.id, opts.parentDeviceId));
+  if (
+    !parent ||
+    !parent.isRouter ||
+    parent.zoneId !== opts.zoneId ||
+    opts.parentDeviceId === opts.selfId
+  ) {
+    throw new InvalidParentError();
+  }
+  return opts.parentDeviceId;
 }
 
 function snapshotOf(d: {
@@ -165,6 +202,7 @@ export type MapDevice = {
   locationDetail: string | null;
   typeIcon: string;
   networkSourceId: string | null;
+  parentDeviceId: string | null;
 };
 
 export async function listAllMapDevices(db: Database): Promise<MapDevice[]> {
@@ -180,6 +218,7 @@ export async function listAllMapDevices(db: Database): Promise<MapDevice[]> {
       locationDetail: devices.locationDetail,
       typeIcon: deviceTypes.icon,
       networkSourceId: devices.networkSourceId,
+      parentDeviceId: devices.parentDeviceId,
     })
     .from(devices)
     .innerJoin(deviceTypes, eq(deviceTypes.id, devices.deviceTypeId))
@@ -234,6 +273,11 @@ export async function createDevice(
           locationDetail: input.locationDetail,
           notes: input.notes,
           networkSourceId: input.networkSourceId,
+          parentDeviceId: await resolveParent(tx, {
+            zoneId: input.zoneId,
+            isRouter: input.isRouter,
+            parentDeviceId: input.parentDeviceId,
+          }),
           status: input.status,
           hasPower: input.hasPower,
           hasFo: input.hasFo,
@@ -268,25 +312,45 @@ export async function updateDevice(
   const existing = await getDevice(db, id);
   if (!existing) throw new DeviceNotFoundError();
   try {
-    const [row] = await db
-      .update(devices)
-      .set({
-        deviceTypeId: input.deviceTypeId,
+    return await db.transaction(async (tx) => {
+      const parentDeviceId = await resolveParent(tx, {
+        zoneId: existing.zoneId,
         isRouter: input.isRouter,
-        locationDetail: input.locationDetail,
-        notes: input.notes,
-        networkSourceId: input.networkSourceId,
-        updatedBy: userId,
-      })
-      .where(eq(devices.id, id))
-      .returning();
-    if (!row) throw new DeviceNotFoundError();
-    return {
-      device: row,
-      staleWrite: isStale(input.expectedUpdatedAt, existing.updatedAt),
-    };
+        parentDeviceId: input.parentDeviceId,
+        selfId: id,
+      });
+      const [row] = await tx
+        .update(devices)
+        .set({
+          deviceTypeId: input.deviceTypeId,
+          isRouter: input.isRouter,
+          locationDetail: input.locationDetail,
+          notes: input.notes,
+          networkSourceId: input.networkSourceId,
+          parentDeviceId,
+          updatedBy: userId,
+        })
+        .where(eq(devices.id, id))
+        .returning();
+      if (!row) throw new DeviceNotFoundError();
+      // No longer a router: devices that hung off it lose their link.
+      if (existing.isRouter && !row.isRouter) {
+        await tx
+          .update(devices)
+          .set({ parentDeviceId: null })
+          .where(eq(devices.parentDeviceId, id));
+      }
+      return {
+        device: row,
+        staleWrite: isStale(input.expectedUpdatedAt, existing.updatedAt),
+      };
+    });
   } catch (error) {
-    if (error instanceof DeviceNotFoundError) throw error;
+    if (
+      error instanceof DeviceNotFoundError ||
+      error instanceof InvalidParentError
+    )
+      throw error;
     return mapFkError(error);
   }
 }
@@ -440,10 +504,16 @@ export async function moveDeviceToZone(
       .set({
         zoneId: targetZoneId,
         seq: await nextSeq(tx, targetZoneId),
+        // The router chain is per zone: drop links in both directions.
+        parentDeviceId: null,
         updatedBy: userId,
       })
       .where(eq(devices.id, id))
       .returning();
+    await tx
+      .update(devices)
+      .set({ parentDeviceId: null })
+      .where(eq(devices.parentDeviceId, id));
 
     await renumberZone(tx, current.zoneId);
     return row!;

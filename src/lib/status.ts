@@ -21,11 +21,12 @@ export const statusLabel: Record<DeviceStatus, string> = {
   tested: id.status.tested,
 };
 
+/** CSS variable references (tokens in globals.css, PRD-M8 §1.1 D). */
 export const statusColor: Record<DeviceStatus, string> = {
-  not_installed: "#9CA3AF",
-  partial: "#F59E0B",
-  installed_untested: "#3B82F6",
-  tested: "#16A34A",
+  not_installed: "var(--status-not-installed)",
+  partial: "var(--status-partial)",
+  installed_untested: "var(--status-installed-untested)",
+  tested: "var(--status-tested)",
 };
 
 /** Checklist components for a `partial` installation (PRD §4). */

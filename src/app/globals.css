@@ -1,61 +1,201 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* PRD-M8 §1.1: `.light` forces light tokens inside a dark page (print routes). */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.light, .light *)));
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+/*
+ * Theme from docs/design/theme.css with the app-context adjustments of
+ * docs/PRD-M8-ui-polish.md §1.1 (A focus ring, C heading scale, D status
+ * tokens, E selection highlight). Fonts come from next/font (layout.tsx).
+ */
+
+:root,
+.light {
+  /* Surfaces */
+  --background: oklch(1 0 0); /* #FFFFFF */
+  --foreground: oklch(0.31 0.04 222); /* #1A3640 deep teal text */
+  --card: oklch(0.97 0.004 100); /* #F6F6F3 off-white section/card */
+  --card-foreground: oklch(0.31 0.04 222);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.31 0.04 222);
+
+  /* Brand */
+  --primary: oklch(0.91 0.145 120.5); /* #D4F07C soft lime — CTAs, icons */
+  --primary-foreground: oklch(0.26 0.038 222); /* deep teal on lime */
+  --secondary: oklch(
+    0.313 0.042 221
+  ); /* #163640 deep teal — dark cards/buttons */
+  --secondary-foreground: oklch(0.985 0.002 100);
+
+  /* Supporting */
+  --muted: oklch(0.96 0.005 210); /* #F1F4F4 */
+  --muted-foreground: oklch(0.52 0.02 220); /* #5B6B70 body copy */
+  --accent: oklch(0.975 0.04 120); /* #F2F9DC lime-tint chips ("About Us") */
+  --accent-foreground: oklch(0.31 0.04 222);
+  --destructive: oklch(0.577 0.2074 26.7117);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Lines & focus */
+  --border: oklch(0.92 0.008 210); /* #E3E8E9 */
+  --input: oklch(0.92 0.008 210);
+  --ring: oklch(
+    0.313 0.042 221
+  ); /* PRD-M8 §1.1 A: deep teal (= --secondary) for >=3:1 focus contrast */
+
+  /* Charts */
+  --chart-1: oklch(0.313 0.042 221); /* deep teal */
+  --chart-2: oklch(0.91 0.145 120.5); /* lime */
+  --chart-3: oklch(0.52 0.05 215); /* mid teal */
+  --chart-4: oklch(0.78 0.13 122); /* deeper lime */
+  --chart-5: oklch(0.74 0.025 215); /* slate grey */
+
+  /* Sidebar (deep teal, like the hero) */
+  --sidebar: oklch(0.26 0.038 222); /* #0F2A33 */
+  --sidebar-foreground: oklch(0.985 0.002 100);
+  --sidebar-primary: oklch(0.91 0.145 120.5);
+  --sidebar-primary-foreground: oklch(0.26 0.038 222);
+  --sidebar-accent: oklch(0.34 0.045 218); /* #1F434C service-card teal */
+  --sidebar-accent-foreground: oklch(0.985 0.002 100);
+  --sidebar-border: oklch(0.36 0.04 218);
+  --sidebar-ring: oklch(0.91 0.145 120.5);
+
+  /* Typography */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --tracking-normal: 0em;
+
+  /* Shape — medium-rounded cards; use rounded-full for pills */
+  --radius: 1rem;
+
+  /* Shadows — soft, teal-tinted */
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.06;
+  --shadow-color: #163640;
+  --shadow-2xs: 0px 1px 3px 0px hsl(194 49% 17% / 0.03);
+  --shadow-xs: 0px 1px 4px 0px hsl(194 49% 17% / 0.04);
+  --shadow-sm:
+    0px 2px 8px 0px hsl(194 49% 17% / 0.06),
+    0px 1px 2px -1px hsl(194 49% 17% / 0.06);
+  --shadow:
+    0px 4px 12px 0px hsl(194 49% 17% / 0.06),
+    0px 1px 3px -1px hsl(194 49% 17% / 0.06);
+  --shadow-md:
+    0px 6px 16px 0px hsl(194 49% 17% / 0.07),
+    0px 2px 4px -2px hsl(194 49% 17% / 0.06);
+  --shadow-lg:
+    0px 10px 28px -4px hsl(194 49% 17% / 0.1),
+    0px 4px 8px -4px hsl(194 49% 17% / 0.06);
+  --shadow-xl:
+    0px 18px 44px -8px hsl(194 49% 17% / 0.12),
+    0px 8px 16px -8px hsl(194 49% 17% / 0.08);
+  --shadow-2xl: 0px 28px 64px -12px hsl(194 49% 17% / 0.22);
+
+  --spacing: 0.25rem;
+
+  /* PRD-M8 §1.1 D: status colours are NOT brand colours and are identical in
+     light and dark (they sit on satellite imagery). Gray / amber / blue / green. */
+  --status-not-installed: #9ca3af;
+  --status-partial: #f59e0b;
+  --status-installed-untested: #3b82f6;
+  --status-tested: #16a34a;
+
+  /* Map tokens (PRD-M8 §2.1) */
   --map-zone-stroke: #ffffff;
   --map-zone-fill: #ffffff;
   --map-marker-fg: #ffffff;
   --map-marker-border: #ffffff;
-  --map-marker-ring: #facc15;
-  --map-badge-bg: #0f172a;
-  --map-badge-fg: #ffffff;
-  --map-label-bg: rgb(15 23 42 / 0.75);
-  --map-label-fg: #ffffff;
-  --map-source-bg: #2563eb;
-  --map-source-fg: #ffffff;
-  --map-connection: #38bdf8;
+  --map-marker-ring: #ffffff;
+  --map-marker-halo: color-mix(in oklab, var(--primary) 55%, transparent);
+  --map-badge-bg: var(--secondary);
+  --map-badge-fg: var(--primary);
+  --map-type-badge-bg: var(--card);
+  --map-type-badge-fg: var(--card-foreground);
+  --map-label-bg: var(--secondary);
+  --map-label-fg: var(--secondary-foreground);
+  --map-source-bg: var(--secondary);
+  --map-source-fg: var(--primary);
+  --map-source-label-bg: var(--secondary);
+  --map-source-label-fg: var(--secondary-foreground);
+  --map-connection: #f6f6f3;
+  --map-connection-active: var(--primary);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Surfaces — built from the hero and the dark service strip */
+  --background: oklch(0.22 0.033 222); /* #0B1F26 */
+  --foreground: oklch(0.97 0.004 100); /* #F6F6F3 */
+  --card: oklch(0.28 0.04 220); /* #15333C */
+  --card-foreground: oklch(0.97 0.004 100);
+  --popover: oklch(0.28 0.04 220);
+  --popover-foreground: oklch(0.97 0.004 100);
+
+  /* Brand — lime stays the hero */
+  --primary: oklch(0.91 0.145 120.5);
+  --primary-foreground: oklch(0.22 0.033 222);
+  --secondary: oklch(0.34 0.045 218); /* #1F434C */
+  --secondary-foreground: oklch(0.97 0.004 100);
+
+  /* Supporting */
+  --muted: oklch(0.3 0.038 220);
+  --muted-foreground: oklch(0.75 0.02 215); /* #A6B4B8 */
+  --accent: oklch(0.34 0.06 160); /* teal leaning toward lime for hovers */
+  --accent-foreground: oklch(0.91 0.145 120.5);
+  --destructive: oklch(0.6547 0.1943 24.23);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Lines & focus */
+  --border: oklch(0.36 0.035 220);
+  --input: oklch(0.39 0.035 220);
+  --ring: oklch(0.91 0.145 120.5);
+
+  /* Charts */
+  --chart-1: oklch(0.91 0.145 120.5);
+  --chart-2: oklch(0.65 0.07 210);
+  --chart-3: oklch(0.97 0.004 100);
+  --chart-4: oklch(0.78 0.13 122);
+  --chart-5: oklch(0.52 0.04 215);
+
+  /* Sidebar */
+  --sidebar: oklch(0.19 0.03 222);
+  --sidebar-foreground: oklch(0.97 0.004 100);
+  --sidebar-primary: oklch(0.91 0.145 120.5);
+  --sidebar-primary-foreground: oklch(0.22 0.033 222);
+  --sidebar-accent: oklch(0.29 0.04 220);
+  --sidebar-accent-foreground: oklch(0.97 0.004 100);
+  --sidebar-border: oklch(0.32 0.035 220);
+  --sidebar-ring: oklch(0.91 0.145 120.5);
+
+  --tracking-normal: 0em;
+  --radius: 1rem;
+
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.3;
+  --shadow-color: #000000;
+  --shadow-2xs: 0px 1px 3px 0px hsl(200 60% 4% / 0.15);
+  --shadow-xs: 0px 1px 4px 0px hsl(200 60% 4% / 0.18);
+  --shadow-sm:
+    0px 2px 8px 0px hsl(200 60% 4% / 0.25),
+    0px 1px 2px -1px hsl(200 60% 4% / 0.25);
+  --shadow:
+    0px 4px 12px 0px hsl(200 60% 4% / 0.28),
+    0px 1px 3px -1px hsl(200 60% 4% / 0.25);
+  --shadow-md:
+    0px 6px 16px 0px hsl(200 60% 4% / 0.3),
+    0px 2px 4px -2px hsl(200 60% 4% / 0.25);
+  --shadow-lg:
+    0px 10px 28px -4px hsl(200 60% 4% / 0.35),
+    0px 4px 8px -4px hsl(200 60% 4% / 0.25);
+  --shadow-xl:
+    0px 18px 44px -8px hsl(200 60% 4% / 0.4),
+    0px 8px 16px -8px hsl(200 60% 4% / 0.3);
+  --shadow-2xl: 0px 28px 64px -12px hsl(200 60% 4% / 0.55);
 }
 
 @theme inline {
@@ -74,23 +214,106 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* PRD-M8 §1.1 D */
+  --color-status-not-installed: var(--status-not-installed);
+  --color-status-partial: var(--status-partial);
+  --color-status-installed-untested: var(--status-installed-untested);
+  --color-status-tested: var(--status-tested);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 6px); /* 10px — inputs, small chips */
+  --radius-md: calc(var(--radius) - 4px); /* 12px — buttons, image tiles */
+  --radius-lg: var(--radius); /* 16px — cards */
+  --radius-xl: calc(var(--radius) + 8px); /* 24px — hero panels */
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.04em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.02em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
+  /* PRD-M8 §1.1 A: full-opacity focus ring (light = deep teal, dark = lime). */
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    letter-spacing: var(--tracking-normal);
+    /* PRD-M8 §1.1 C: dense app, not marketing. */
+    line-height: normal;
+  }
+
+  /* PRD-M8 §1.1 C: app heading scale (page title / section / card title). */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-foreground font-semibold tracking-tight;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-lg;
+  }
+
+  h3 {
+    @apply text-base font-semibold;
+  }
+
+  h4 {
+    @apply text-sm font-semibold;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Map (PRD-M8 §2.1). Colours only via tokens above.                    */
+/* ------------------------------------------------------------------ */
 
 /* Zone boundary on the satellite map: thin white line, faint fill. CSS wins
    over the presentation attributes Leaflet writes on the SVG path. */
@@ -109,66 +332,96 @@
 }
 .device-marker {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 }
 .device-marker__dot {
+  position: relative;
   display: flex;
   width: 100%;
   height: 100%;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  /* Map pin: rounded square with one sharp corner, rotated so the corner
+     points down (the tip is the geo position). */
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
   border: 2px solid var(--map-marker-border);
   background: var(--marker-color);
   color: var(--map-marker-fg);
-  font-size: 13px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+  box-shadow: var(--shadow-md);
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
+.device-marker__num {
+  display: block;
+  transform: rotate(45deg);
+}
+/* PRD-M8 §1.1 E: white ring + soft lime halo + scale; never a status colour. */
 .device-marker--selected .device-marker__dot {
+  transform: rotate(-45deg) scale(1.15);
   box-shadow:
     0 0 0 3px var(--map-marker-ring),
-    0 1px 4px rgb(0 0 0 / 0.5);
+    0 0 0 8px var(--map-marker-halo),
+    var(--shadow-md);
+}
+/* Partial status: dashed inner ring so it reads without colour. */
+.device-marker--partial .device-marker__dot::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  border: 1.5px dashed var(--map-marker-border);
+  pointer-events: none;
 }
 .device-marker__badge {
   position: absolute;
   display: flex;
-  width: 17px;
-  height: 17px;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid var(--map-marker-border);
-  background: var(--map-badge-bg);
-  color: var(--map-badge-fg);
 }
 .device-marker__badge--router {
-  top: -6px;
-  right: -6px;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  background: var(--map-badge-bg);
+  color: var(--map-badge-fg);
+  border: 1px solid var(--map-marker-border);
 }
 .device-marker__badge--type {
-  bottom: -6px;
-  left: -6px;
+  bottom: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--map-type-badge-bg);
+  color: var(--map-type-badge-fg);
+  border: 1px solid var(--border);
 }
 .device-marker__label {
   position: absolute;
   top: 100%;
   left: 50%;
-  margin-top: 4px;
+  margin-top: 12px; /* clears the pin tip below the 28px box */
   max-width: 140px;
   transform: translateX(-50%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: 4px;
+  border-radius: 9999px;
   background: var(--map-label-bg);
   color: var(--map-label-fg);
-  padding: 1px 5px;
+  padding: 1px 8px;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.4;
+  box-shadow: var(--shadow-sm);
   pointer-events: none;
 }
 
@@ -190,15 +443,15 @@
   border: 2px solid var(--map-marker-border);
   background: var(--marker-color);
   color: var(--map-marker-fg);
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  box-shadow: var(--shadow-sm);
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
 }
 
-/* Network source markers: rounded square (devices are round) + name label
-   that is always visible. */
+/* Network source markers: teal rounded square with lime icon + pill label. */
 .leaflet-div-icon.source-marker-icon {
   background: transparent;
   border: 0;
@@ -218,30 +471,36 @@
   border: 2px solid var(--map-marker-border);
   background: var(--map-source-bg);
   color: var(--map-source-fg);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+  box-shadow: var(--shadow-md);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 .source-marker--selected .source-marker__box {
+  transform: scale(1.15);
   box-shadow:
     0 0 0 3px var(--map-marker-ring),
-    0 1px 4px rgb(0 0 0 / 0.5);
+    0 0 0 8px var(--map-marker-halo),
+    var(--shadow-md);
 }
 .source-marker__label {
   position: absolute;
   top: 100%;
   left: 50%;
-  margin-top: 4px;
+  margin-top: 6px;
   max-width: 160px;
   transform: translateX(-50%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: 4px;
-  background: var(--map-source-bg);
-  color: var(--map-source-fg);
-  padding: 1px 6px;
+  border-radius: 9999px;
+  background: var(--map-source-label-bg);
+  color: var(--map-source-label-fg);
+  padding: 1px 8px;
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.4;
+  box-shadow: var(--shadow-sm);
   pointer-events: none;
 }
 
@@ -250,8 +509,13 @@
   stroke: var(--map-connection);
   stroke-width: 2px;
   stroke-dasharray: 6 5;
-  stroke-opacity: 0.9;
+  stroke-opacity: 0.7;
   fill: none;
+}
+.connection-line--active {
+  stroke: var(--map-connection-active);
+  stroke-dasharray: none;
+  stroke-opacity: 1;
 }
 
 /* Legend swatch for the network source marker. */
@@ -281,4 +545,118 @@
   stroke-width: 1px;
   fill: var(--primary);
   fill-opacity: 0.12;
+}
+
+/* ------------------------------------------------------------------ */
+/* Leaflet / Geoman control theming (PRD-M8 §2): card surface, radius,  */
+/* font, shadow. Attribution stays visible.                             */
+/* ------------------------------------------------------------------ */
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+.leaflet-bar,
+.leaflet-touch .leaflet-bar,
+.leaflet-pm-toolbar .leaflet-pm-actions-container {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover,
+.leaflet-touch .leaflet-bar a,
+.leaflet-touch .leaflet-bar a:hover {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-bottom: 1px solid var(--border);
+}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus-visible {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+.leaflet-bar a:last-child {
+  border-bottom: 0;
+}
+.leaflet-bar a.leaflet-disabled {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+.leaflet-pm-toolbar .button-container a.leaflet-buttons-disabled {
+  background-color: var(--muted);
+}
+.leaflet-pm-toolbar .leaflet-pm-action {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  font-family: var(--font-sans);
+}
+.leaflet-pm-toolbar .leaflet-pm-action:hover {
+  background-color: var(--accent);
+}
+.leaflet-pm-toolbar .button-container.active a {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Attribution: must remain visible and legible over imagery. */
+.leaflet-container .leaflet-control-attribution {
+  background: color-mix(in oklab, var(--card) 85%, transparent);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  border-radius: var(--radius-sm) 0 0 0;
+  padding: 1px 6px;
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: var(--foreground);
+  text-decoration: underline;
+}
+
+/* Popups and tooltips. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-lg);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--muted-foreground);
+}
+.leaflet-tooltip {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.leaflet-tooltip-top:before {
+  border-top-color: var(--popover);
+}
+.leaflet-tooltip-bottom:before {
+  border-bottom-color: var(--popover);
+}
+.leaflet-tooltip-left:before {
+  border-left-color: var(--popover);
+}
+.leaflet-tooltip-right:before {
+  border-right-color: var(--popover);
+}
+
+/* PRD-M8 §2: respect prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

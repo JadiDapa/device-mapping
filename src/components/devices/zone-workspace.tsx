@@ -244,6 +244,17 @@ export function ZoneWorkspace({
     );
     return [...own, ...foreign];
   }, [selectedSource, optimistic, foreignSourceDevices, zone.name]);
+  const routerOptions = useMemo(
+    () =>
+      optimistic
+        .filter((d) => d.isRouter)
+        .map((d) => ({
+          id: d.id,
+          seq: d.seq,
+          locationDetail: d.locationDetail,
+        })),
+    [optimistic],
+  );
   const visible = useMemo(
     () => filterDevices(optimistic, filters),
     [optimistic, filters],
@@ -260,6 +271,7 @@ export function ZoneWorkspace({
         locationDetail: d.locationDetail,
         typeIcon: d.typeIcon,
         networkSourceId: d.networkSourceId,
+        parentDeviceId: d.parentDeviceId,
       })),
     [visible],
   );
@@ -416,6 +428,7 @@ export function ZoneWorkspace({
             locationDetail: input.locationDetail,
             notes: input.notes,
             networkSourceId: input.networkSourceId,
+            parentDeviceId: input.isRouter ? null : input.parentDeviceId,
             ...(type ? { typeName: type.name, typeIcon: type.icon } : {}),
           },
         });
@@ -671,6 +684,7 @@ export function ZoneWorkspace({
                 nextSeq={nextSeq}
                 types={types}
                 sources={sourceOptions}
+                routers={routerOptions}
                 onCreated={(device) => {
                   setDraft(null);
                   select(device.id);
@@ -684,6 +698,7 @@ export function ZoneWorkspace({
                 device={selected}
                 types={types}
                 sources={sourceOptions}
+                routers={routerOptions}
                 otherZones={otherZones}
                 isAdmin={isAdmin}
                 onBack={() => select(null)}

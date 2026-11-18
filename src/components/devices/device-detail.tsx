@@ -39,6 +39,7 @@ import type { ZoneDevice } from "@/server/devices";
 import { DeviceHistory } from "./device-history";
 import type { TypeOption } from "./device-form";
 import { SeqBadge } from "./seq-badge";
+import { ParentSelect, routerLabel, type RouterOption } from "./parent-select";
 import { SourceSelect, type SourceOption } from "./source-select";
 import { StatusSelector } from "./status-selector";
 
@@ -46,6 +47,7 @@ type Props = {
   device: ZoneDevice;
   types: TypeOption[];
   sources: SourceOption[];
+  routers: RouterOption[];
   otherZones: { id: string; name: string }[];
   isAdmin: boolean;
   onBack: () => void;
@@ -59,6 +61,7 @@ export function DeviceDetail({
   device,
   types,
   sources,
+  routers,
   otherZones,
   isAdmin,
   onBack,
@@ -131,10 +134,11 @@ export function DeviceDetail({
               device={device}
               types={types}
               sources={sources}
+              routers={routers}
               onSave={onSaveDetail}
             />
           ) : (
-            <ReadOnlyFields device={device} sources={sources} />
+            <ReadOnlyFields device={device} sources={sources} routers={routers} />
           )}
 
           <dl className="text-sm">
@@ -168,21 +172,31 @@ export function DeviceDetail({
 function ReadOnlyFields({
   device,
   sources,
+  routers,
 }: {
   device: ZoneDevice;
   sources: SourceOption[];
+  routers: RouterOption[];
 }) {
   const source = sources.find((s) => s.id === device.networkSourceId);
+  const parent = routers.find((r) => r.id === device.parentDeviceId);
   return (
     <dl className="space-y-3 text-sm">
       <div>
         <dt className="text-muted-foreground">{id.device.locationDetail}</dt>
         <dd>{device.locationDetail ?? id.device.noLocation}</dd>
       </div>
-      <div>
-        <dt className="text-muted-foreground">{id.source.deviceField}</dt>
-        <dd>{source ? `${source.name} (${source.kind})` : "—"}</dd>
-      </div>
+      {device.isRouter ? (
+        <div>
+          <dt className="text-muted-foreground">{id.source.deviceField}</dt>
+          <dd>{source ? `${source.name} (${source.kind})` : "—"}</dd>
+        </div>
+      ) : (
+        <div>
+          <dt className="text-muted-foreground">{id.device.parentField}</dt>
+          <dd>{parent ? routerLabel(parent) : "—"}</dd>
+        </div>
+      )}
       <div>
         <dt className="text-muted-foreground">{id.device.notes}</dt>
         <dd className="whitespace-pre-wrap">{device.notes ?? "—"}</dd>
@@ -195,11 +209,13 @@ function EditForm({
   device,
   types,
   sources,
+  routers,
   onSave,
 }: {
   device: ZoneDevice;
   types: TypeOption[];
   sources: SourceOption[];
+  routers: RouterOption[];
   onSave: (input: DeviceUpdateInput) => Promise<boolean>;
 }) {
   const { control, handleSubmit, formState, watch, setValue } = useForm<
@@ -214,6 +230,7 @@ function EditForm({
       locationDetail: device.locationDetail ?? "",
       notes: device.notes ?? "",
       networkSourceId: device.networkSourceId ?? "",
+      parentDeviceId: device.parentDeviceId ?? "",
     },
   });
 
@@ -302,15 +319,26 @@ function EditForm({
             </Field>
           )}
         />
-        <SourceSelect
-          htmlId="edit-device-source"
-          value={watch("networkSourceId")}
-          onChange={(v) =>
-            setValue("networkSourceId", v, { shouldDirty: true })
-          }
-          sources={sources}
-          zoneId={device.zoneId}
-        />
+        {watch("isRouter") === true ? (
+          <SourceSelect
+            htmlId="edit-device-source"
+            value={watch("networkSourceId")}
+            onChange={(v) =>
+              setValue("networkSourceId", v, { shouldDirty: true })
+            }
+            sources={sources}
+            zoneId={device.zoneId}
+          />
+        ) : (
+          <ParentSelect
+            htmlId="edit-device-parent"
+            value={watch("parentDeviceId")}
+            onChange={(v) =>
+              setValue("parentDeviceId", v, { shouldDirty: true })
+            }
+            routers={routers.filter((r) => r.id !== device.id)}
+          />
+        )}
       </FieldGroup>
       <Button type="submit" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? id.common.saving : id.common.save}

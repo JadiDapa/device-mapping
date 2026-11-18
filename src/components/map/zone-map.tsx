@@ -11,7 +11,10 @@ import MapView from "./map-view";
 import { MyLocation } from "./my-location";
 import { SourceMarker, type MarkerSource } from "./source-marker";
 
-export type ZoneMapDevice = MarkerDevice & { networkSourceId: string | null };
+export type ZoneMapDevice = MarkerDevice & {
+  networkSourceId: string | null;
+  parentDeviceId: string | null;
+};
 
 type Props = {
   boundary: GeoJsonPolygon | null;

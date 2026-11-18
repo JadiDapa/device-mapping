@@ -7,7 +7,11 @@ import {
   DeviceTypeNameTakenError,
   DeviceTypeNotFoundError,
 } from "@/server/device-types";
-import { DeviceNotFoundError, ReorderMismatchError } from "@/server/devices";
+import {
+  DeviceNotFoundError,
+  InvalidParentError,
+  ReorderMismatchError,
+} from "@/server/devices";
 import { NetworkSourceNotFoundError } from "@/server/network-sources";
 import {
   LastAdminError,
@@ -107,6 +111,14 @@ export async function runAction<T>(
     }
     if (error instanceof DeviceNotFoundError) {
       return { ok: false, status: 404, error: id.device.notFound };
+    }
+    if (error instanceof InvalidParentError) {
+      return {
+        ok: false,
+        status: 422,
+        error: id.device.parentInvalid,
+        fieldErrors: { parentDeviceId: [id.device.parentInvalid] },
+      };
     }
     if (error instanceof ReorderMismatchError) {
       return { ok: false, status: 409, error: id.device.reorderMismatch };

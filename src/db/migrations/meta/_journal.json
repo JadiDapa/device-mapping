@@ -43,6 +43,13 @@
       "when": 1794977355390,
       "tag": "0005_lowly_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794982195936,
+      "tag": "0006_camera_points",
+      "breakpoints": true
     }
   ]
 }

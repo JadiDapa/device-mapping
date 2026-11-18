@@ -163,6 +163,58 @@ export const extenders = pgTable(
   (t) => [index("extenders_zone_id_idx").on(t.zoneId)],
 );
 
+/**
+ * Camera capture position: a point on the zone map from which photos were
+ * taken (to help 3D mapping). `camera_point_images (camera_point_id, position)`
+ * uniqueness is DEFERRABLE INITIALLY DEFERRED and added by hand in the
+ * migration (like devices.seq) so a reorder can swap positions in one
+ * transaction.
+ */
+export const cameraPoints = pgTable(
+  "camera_points",
+  {
+    id: id(),
+    zoneId: uuid("zone_id")
+      .notNull()
+      .references(() => zones.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    notes: text("notes"),
+    lat: doublePrecision("lat").notNull(),
+    lng: doublePrecision("lng").notNull(),
+    updatedBy: uuid("updated_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("camera_points_zone_id_idx").on(t.zoneId)],
+);
+
+export const cameraPointImages = pgTable(
+  "camera_point_images",
+  {
+    id: id(),
+    cameraPointId: uuid("camera_point_id")
+      .notNull()
+      .references(() => cameraPoints.id, { onDelete: "cascade" }),
+    /** 0..n-1 without gaps, per camera point. */
+    position: integer("position").notNull(),
+    caption: text("caption"),
+    /** Storage keys (see src/server/storage.ts). */
+    displayKey: text("display_key").notNull(),
+    thumbKey: text("thumb_key").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    mime: text("mime").notNull(),
+    uploadedBy: uuid("uploaded_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("camera_point_images_point_idx").on(t.cameraPointId)],
+);
+
 export type StatusSnapshot = {
   has_power: boolean;
   has_fo: boolean;
@@ -243,6 +295,24 @@ export const deviceStatusHistoryRelations = relations(
     changer: one(user, {
       fields: [deviceStatusHistory.changedBy],
       references: [user.id],
+    }),
+  }),
+);
+
+export const cameraPointsRelations = relations(
+  cameraPoints,
+  ({ many, one }) => ({
+    zone: one(zones, { fields: [cameraPoints.zoneId], references: [zones.id] }),
+    images: many(cameraPointImages),
+  }),
+);
+
+export const cameraPointImagesRelations = relations(
+  cameraPointImages,
+  ({ one }) => ({
+    cameraPoint: one(cameraPoints, {
+      fields: [cameraPointImages.cameraPointId],
+      references: [cameraPoints.id],
     }),
   }),
 );

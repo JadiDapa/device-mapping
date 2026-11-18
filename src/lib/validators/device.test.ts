@@ -187,3 +187,25 @@ describe("deviceTypeInputSchema", () => {
     ).toBe(false);
   });
 });
+
+describe("networkSourceId on device schemas", () => {
+  const detail = { deviceTypeId: uuid(1) };
+
+  it("defaults to null and treats an empty select value as none", () => {
+    expect(deviceUpdateSchema.parse(detail).networkSourceId).toBeNull();
+    expect(
+      deviceUpdateSchema.parse({ ...detail, networkSourceId: "" })
+        .networkSourceId,
+    ).toBeNull();
+  });
+
+  it("accepts a uuid and rejects garbage", () => {
+    expect(
+      deviceUpdateSchema.parse({ ...detail, networkSourceId: uuid(9) })
+        .networkSourceId,
+    ).toBe(uuid(9));
+    expect(
+      deviceUpdateSchema.safeParse({ ...detail, networkSourceId: "x" }).success,
+    ).toBe(false);
+  });
+});

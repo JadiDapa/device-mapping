@@ -62,6 +62,11 @@ const detailFields = {
   isRouter: z.boolean().default(false),
   locationDetail: optionalText(200, id.device.locationDetailTooLong),
   notes: optionalText(2000, id.device.notesTooLong),
+  /** Optional link to a network source ("" from a select means none). */
+  networkSourceId: z
+    .union([uuid, z.literal("")])
+    .nullish()
+    .transform((v) => (v ? v : null)),
 };
 
 /** Edit of the non-status fields. Status goes through setDeviceStatus. */

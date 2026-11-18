@@ -8,6 +8,7 @@ import {
   DeviceTypeNotFoundError,
 } from "@/server/device-types";
 import { DeviceNotFoundError, ReorderMismatchError } from "@/server/devices";
+import { NetworkSourceNotFoundError } from "@/server/network-sources";
 import {
   ZoneConfirmMismatchError,
   ZoneNameTakenError,
@@ -94,6 +95,9 @@ export async function runAction<T>(
         status: 409,
         error: fmt(id.deviceType.inUse, { n: error.count }),
       };
+    }
+    if (error instanceof NetworkSourceNotFoundError) {
+      return { ok: false, status: 404, error: id.source.notFound };
     }
     if (error instanceof DeviceNotFoundError) {
       return { ok: false, status: 404, error: id.device.notFound };

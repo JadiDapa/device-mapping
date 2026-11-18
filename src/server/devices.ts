@@ -26,7 +26,8 @@ import type {
   DeviceUpdateInput,
 } from "@/lib/validators/device";
 import { DeviceTypeNotFoundError } from "./device-types";
-import { hasPgCode } from "./pg";
+import { NetworkSourceNotFoundError } from "./network-sources";
+import { hasPgCode, pgConstraint } from "./pg";
 import { ZoneNotFoundError } from "./zones";
 
 export class DeviceNotFoundError extends Error {
@@ -90,6 +91,17 @@ async function renumberZone(tx: Tx, zoneId: string): Promise<void> {
     ) r
     WHERE d.id = r.id AND d.seq <> r.rn
   `);
+}
+
+/** FK violation (23503) -> the specific "not found" error. */
+function mapFkError(error: unknown): never {
+  if (hasPgCode(error, "23503")) {
+    if (pgConstraint(error)?.includes("network_source")) {
+      throw new NetworkSourceNotFoundError();
+    }
+    throw new DeviceTypeNotFoundError();
+  }
+  throw error;
 }
 
 function snapshotOf(d: {
@@ -188,6 +200,7 @@ export async function createDevice(
           lng: input.lng,
           locationDetail: input.locationDetail,
           notes: input.notes,
+          networkSourceId: input.networkSourceId,
           status: input.status,
           hasPower: input.hasPower,
           hasFo: input.hasFo,
@@ -208,8 +221,7 @@ export async function createDevice(
       return row!;
     });
   } catch (error) {
-    if (hasPgCode(error, "23503")) throw new DeviceTypeNotFoundError();
-    throw error;
+    return mapFkError(error);
   }
 }
 
@@ -230,6 +242,7 @@ export async function updateDevice(
         isRouter: input.isRouter,
         locationDetail: input.locationDetail,
         notes: input.notes,
+        networkSourceId: input.networkSourceId,
         updatedBy: userId,
       })
       .where(eq(devices.id, id))
@@ -240,8 +253,8 @@ export async function updateDevice(
       staleWrite: isStale(input.expectedUpdatedAt, existing.updatedAt),
     };
   } catch (error) {
-    if (hasPgCode(error, "23503")) throw new DeviceTypeNotFoundError();
-    throw error;
+    if (error instanceof DeviceNotFoundError) throw error;
+    return mapFkError(error);
   }
 }
 

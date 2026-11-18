@@ -1,4 +1,4 @@
-import { id } from "@/lib/i18n/id";
+import { id } from "./i18n/id";
 
 /**
  * Single source of truth for installation status (PRD §4): enum values,

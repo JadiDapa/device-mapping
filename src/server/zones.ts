@@ -100,6 +100,16 @@ export async function listZoneOptions(
     .orderBy(asc(zones.name));
 }
 
+/** Zones with their polygon (the /map page); zones without one are omitted by callers. */
+export async function listZoneBoundaries(
+  db: Database,
+): Promise<{ id: string; name: string; boundary: Zone["boundary"] }[]> {
+  return db
+    .select({ id: zones.id, name: zones.name, boundary: zones.boundary })
+    .from(zones)
+    .orderBy(asc(zones.name));
+}
+
 /** Summary of one zone (same GROUP BY query as the dashboard). */
 export async function getZoneSummary(
   db: Database,

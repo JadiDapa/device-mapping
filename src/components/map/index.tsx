@@ -22,3 +22,9 @@ export const ZoneMap = dynamic(() => import("./zone-map"), {
   ssr: false,
   loading: MapLoading,
 });
+
+/** `/map`: every zone, device and source in one read-only map. */
+export const AllZonesMap = dynamic(() => import("./all-zones-map"), {
+  ssr: false,
+  loading: MapLoading,
+});

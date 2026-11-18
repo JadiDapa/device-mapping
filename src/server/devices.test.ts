@@ -14,6 +14,7 @@ import {
   createDevice,
   deleteDevice,
   DeviceNotFoundError,
+  listAllMapDevices,
   listDeviceHistory,
   listZoneDevices,
   moveDevicePosition,
@@ -496,5 +497,15 @@ describe("devices data layer", () => {
       });
       expect(await getZoneSummary(t.db, NIL)).toBeNull();
     });
+  });
+
+  it("lists marker rows across all zones with the type icon", async () => {
+    await createDevice(t.db, input({ zoneId: zoneA }), userId);
+    await createDevice(t.db, input({ zoneId: zoneB, isRouter: true }), userId);
+    const rows = await listAllMapDevices(t.db);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.typeIcon === "radio")).toBe(true);
+    expect(rows.map((r) => r.seq)).toEqual([1, 1]);
+    expect(rows.filter((r) => r.isRouter)).toHaveLength(1);
   });
 });

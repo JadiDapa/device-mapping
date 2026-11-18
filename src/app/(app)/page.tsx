@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { MapIcon, PlusIcon } from "lucide-react";
 import { getDb } from "@/db";
 import { Button } from "@/components/ui/button";
 import { ZoneCard } from "@/components/zones/zone-card";
@@ -16,14 +16,22 @@ export default async function DashboardPage() {
     <main className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{id.dashboard.title}</h1>
-        {isAdmin && (
-          <Button asChild>
-            <Link href="/zones/new">
-              <PlusIcon />
-              {id.dashboard.newZone}
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/map">
+              <MapIcon />
+              {id.allMap.viewAll}
             </Link>
           </Button>
-        )}
+          {isAdmin && (
+            <Button asChild>
+              <Link href="/zones/new">
+                <PlusIcon />
+                {id.dashboard.newZone}
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {zones.length === 0 ? (

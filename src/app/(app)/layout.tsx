@@ -26,6 +26,24 @@ export default async function AppLayout({
         <Link href="/" className="font-semibold">
           {id.app.title}
         </Link>
+        <Link
+          href="/map"
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          {id.nav.map}
+        </Link>
+        <Link
+          href="/network-sources"
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          {id.nav.sources}
+        </Link>
+        <Link
+          href="/export"
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          {id.nav.export}
+        </Link>
         {role === "admin" && (
           <Link
             href="/admin/device-types"

@@ -153,6 +153,39 @@ export async function listZoneDevices(
   }));
 }
 
+/** Lightweight rows for every device in every zone (the /map page). */
+export type MapDevice = {
+  id: string;
+  zoneId: string;
+  seq: number;
+  status: Device["status"];
+  isRouter: boolean;
+  lat: number;
+  lng: number;
+  locationDetail: string | null;
+  typeIcon: string;
+  networkSourceId: string | null;
+};
+
+export async function listAllMapDevices(db: Database): Promise<MapDevice[]> {
+  return db
+    .select({
+      id: devices.id,
+      zoneId: devices.zoneId,
+      seq: devices.seq,
+      status: devices.status,
+      isRouter: devices.isRouter,
+      lat: devices.lat,
+      lng: devices.lng,
+      locationDetail: devices.locationDetail,
+      typeIcon: deviceTypes.icon,
+      networkSourceId: devices.networkSourceId,
+    })
+    .from(devices)
+    .innerJoin(deviceTypes, eq(deviceTypes.id, devices.deviceTypeId))
+    .orderBy(asc(devices.zoneId), asc(devices.seq));
+}
+
 /** Newest first. */
 export async function listDeviceHistory(
   db: Database,

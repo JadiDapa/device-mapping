@@ -259,3 +259,11 @@
   background: var(--map-source-bg);
   color: var(--map-source-fg);
 }
+
+/* Zone polygons on the all-zones map are links into the zone. */
+.zone-boundary--link {
+  cursor: pointer;
+}
+.zone-boundary--link:hover {
+  fill-opacity: 0.18;
+}

@@ -1,7 +1,9 @@
 node_modules
 .next
 data
-drizzle
+src/db/migrations
+playwright-report
+test-results
 *.md
 .vitest
 .claude

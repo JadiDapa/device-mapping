@@ -11,8 +11,6 @@ out/
 .env
 .env.local
 
-# data (sqlite + uploads volume)
-data/
 
 # test / coverage
 coverage/
@@ -24,3 +22,7 @@ Thumbs.db
 
 # vitest cache/output
 .vitest/
+
+# playwright
+playwright-report/
+test-results/

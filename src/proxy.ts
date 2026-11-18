@@ -3,23 +3,24 @@ import type { NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 /**
- * proxy.ts (not middleware.ts, per Next.js 16) protecting
- * /admin/*. This is only an OPTIMISTIC check: getSessionCookie reads cookie
- * presence without validating it. The real gate is the server-side
- * auth.api.getSession() call in src/app/admin/layout.tsx; this proxy only avoids
- * a flash of admin UI for obviously signed-out visitors.
+ * proxy.ts (not middleware.ts, per Next.js 16). Only an OPTIMISTIC check:
+ * getSessionCookie reads cookie presence without validating it. The real gate
+ * is requireUser()/getSession() in src/app/(app)/layout.tsx and in every
+ * Server Action; this proxy only avoids a flash of app UI for obviously
+ * signed-out visitors.
+ *
+ * Public: /login, /api/auth, /api/health, /print (guarded by a signed export
+ * token, added in M6), Next internals and static assets.
  */
 export function proxy(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request);
-
-  if (!sessionCookie) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  if (!getSessionCookie(request)) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!login|api/auth|api/health|print|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|txt|xml)$).*)",
+  ],
 };

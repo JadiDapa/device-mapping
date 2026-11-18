@@ -1,13 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PencilIcon } from "lucide-react";
 import { z } from "zod";
 import { getDb } from "@/db";
-import { MapView } from "@/components/map";
-import { Button } from "@/components/ui/button";
+import { ZoneWorkspace } from "@/components/devices/zone-workspace";
 import { requireUser } from "@/lib/auth";
-import { id } from "@/lib/i18n/id";
-import { getZone } from "@/server/zones";
+import { listDeviceTypes } from "@/server/device-types";
+import { listZoneDevices } from "@/server/devices";
+import { getZone, getZoneSummary, listZoneOptions } from "@/server/zones";
 
 export default async function ZonePage({
   params,
@@ -18,10 +16,17 @@ export default async function ZonePage({
   const { id: zoneId } = await params;
   if (!z.string().uuid().safeParse(zoneId).success) notFound();
 
-  const zone = await getZone(getDb(), zoneId);
+  const db = getDb();
+  const zone = await getZone(db, zoneId);
   if (!zone) notFound();
 
-  const isAdmin = session.user.role === "admin";
+  const [devices, types, summary, zoneOptions] = await Promise.all([
+    listZoneDevices(db, zoneId),
+    listDeviceTypes(db),
+    getZoneSummary(db, zoneId),
+    listZoneOptions(db),
+  ]);
+
   const center =
     zone.centerLat != null && zone.centerLng != null
       ? { lat: zone.centerLat, lng: zone.centerLng }
@@ -29,35 +34,32 @@ export default async function ZonePage({
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-start justify-between gap-4 border-b p-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold">{zone.name}</h1>
-          {zone.description && (
-            <p className="text-muted-foreground text-sm">{zone.description}</p>
-          )}
-          {!zone.boundary && (
-            <p className="text-muted-foreground text-xs">
-              {id.zone.noBoundary}
-            </p>
-          )}
-        </div>
-        {isAdmin && (
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/zones/${zone.id}/edit`}>
-              <PencilIcon />
-              {id.common.edit}
-            </Link>
-          </Button>
-        )}
-      </div>
-      <div className="relative min-h-96 flex-1">
-        <MapView
-          boundary={zone.boundary}
-          center={center}
-          zoom={zone.defaultZoom}
-          className="absolute inset-0 rounded-none"
-        />
-      </div>
+      <ZoneWorkspace
+        zone={{
+          id: zone.id,
+          name: zone.name,
+          description: zone.description,
+          boundary: zone.boundary,
+          center,
+          zoom: zone.defaultZoom,
+        }}
+        devices={devices}
+        types={types.map((t) => ({ id: t.id, name: t.name, icon: t.icon }))}
+        summary={
+          summary ?? {
+            total: 0,
+            routers: 0,
+            counts: {
+              not_installed: 0,
+              partial: 0,
+              installed_untested: 0,
+              tested: 0,
+            },
+          }
+        }
+        otherZones={zoneOptions.filter((z) => z.id !== zone.id)}
+        isAdmin={session.user.role === "admin"}
+      />
     </main>
   );
 }

@@ -1,21 +1,17 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-# deps — install dependencies, with build tools available in case
-# better-sqlite3 has no prebuilt binary for this platform.
+# deps — install dependencies. Everything is pure JS / prebuilt binaries
+# (postgres.js needs no native build), so no compiler toolchain is required.
 # ---------------------------------------------------------------------------
 FROM node:24-bookworm-slim AS deps
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # ---------------------------------------------------------------------------
-# builder — type-check and build the Next.js standalone output.
+# builder — build the Next.js standalone output.
 # ---------------------------------------------------------------------------
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
@@ -23,14 +19,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# drizzle-kit generate needs no live DB; the migrations folder is committed
-# so `next build` never touches the database.
+# Migrations are committed, so `next build` never touches the database and
+# needs no runtime env.
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ---------------------------------------------------------------------------
-# runner — slim runtime image. Copies the standalone server plus the
-# migrate/seed scripts, which run via tsx before the server starts.
+# runner — slim runtime image. `npm run build` already copied static assets and
+# public/ into .next/standalone. Migrate/seed scripts run via tsx before the
+# server starts. Chromium for PDF/PNG export is added in M6.
 # ---------------------------------------------------------------------------
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
@@ -41,28 +38,20 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid nodejs nextjs
 
-# Standalone server + static assets.
 COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
-# Migration/seed tooling: drizzle migrations, the scripts that run them,
-# and their lib/* dependencies. The standalone output ships a pruned
-# node_modules that doesn't include tsx (a devDependency); overlaying the
-# full deps node_modules on top (Docker COPY merges directory trees) is
-# simpler and more robust than hand-picking a dependency subset.
-COPY --from=builder /app/drizzle ./drizzle
+# Migration/seed tooling and what it imports. The standalone output ships a
+# pruned node_modules without tsx (a devDependency); overlaying the full deps
+# node_modules (Docker COPY merges directory trees) is simpler and more robust
+# than hand-picking a dependency subset.
+COPY --from=builder /app/src/db ./src/db
+COPY --from=builder /app/src/lib ./src/lib
 COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/lib/db ./lib/db
-COPY --from=builder /app/lib/env.ts ./lib/env.ts
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=deps /app/node_modules ./node_modules
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh \
-    && mkdir -p /app/data /app/data/uploads \
-    && chown -R nextjs:nodejs /app
+RUN chmod +x ./docker-entrypoint.sh && chown -R nextjs:nodejs /app
 
 USER nextjs
 

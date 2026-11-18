@@ -1,6 +1,14 @@
 "use client";
 
-import { MapPinPlusIcon, NetworkIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import {
+  LocateFixedIcon,
+  MapPinPlusIcon,
+  MoveIcon,
+  NetworkIcon,
+  SlidersHorizontalIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { id } from "@/lib/i18n/id";
 import { cn } from "@/lib/utils";
@@ -21,7 +29,7 @@ function ToggleButton({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        "bg-card/95 text-card-foreground focus-visible:ring-ring/50 pointer-events-auto min-h-9 rounded-md border px-3 text-xs shadow-md outline-none focus-visible:ring-[3px]",
+        "bg-card/95 text-card-foreground focus-visible:ring-ring/50 pointer-events-auto min-h-11 rounded-md border px-3 text-xs shadow-md outline-none focus-visible:ring-[3px] md:min-h-9",
         pressed && "border-foreground font-semibold",
       )}
     >
@@ -30,8 +38,20 @@ function ToggleButton({
   );
 }
 
-/** Add-device button (admin) and the persisted display toggles (PRD F4). */
-export function MapToolbar({ canEdit }: { canEdit: boolean }) {
+/**
+ * Add buttons (admin) and the persisted display toggles (PRD F4). Below `md`
+ * the toolbar is condensed: the add buttons live in the bottom sheet, the
+ * three display toggles collapse behind one "Tampilan" button and admins get
+ * a "Mode pindah" button (touch dragging is only enabled in that mode).
+ */
+export function MapToolbar({
+  canEdit,
+  onAddHere,
+}: {
+  canEdit: boolean;
+  /** Add a device at the browser's GPS position. */
+  onAddHere: () => void;
+}) {
   const mode = useMapStore((s) => s.mode);
   const setMode = useMapStore((s) => s.setMode);
   const showLocation = useMapStore((s) => s.showLocation);
@@ -40,8 +60,10 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
   const setShowTypeIcon = useMapStore((s) => s.setShowTypeIcon);
   const showConnections = useMapStore((s) => s.showConnections);
   const setShowConnections = useMapStore((s) => s.setShowConnections);
+  const [displayOpen, setDisplayOpen] = useState(false);
   const adding = mode === "addDevice";
   const addingSource = mode === "addSource";
+  const moving = mode === "move";
 
   return (
     <div className="pointer-events-none flex flex-wrap items-start gap-2">
@@ -61,6 +83,18 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
         <Button
           type="button"
           size="sm"
+          variant="outline"
+          className="pointer-events-auto hidden min-h-9 shadow-md md:inline-flex"
+          onClick={onAddHere}
+        >
+          <LocateFixedIcon />
+          {id.geo.addAtMyLocation}
+        </Button>
+      )}
+      {canEdit && (
+        <Button
+          type="button"
+          size="sm"
           variant={addingSource ? "secondary" : "outline"}
           className="pointer-events-auto hidden min-h-9 shadow-md md:inline-flex"
           onClick={() => setMode(addingSource ? "idle" : "addSource")}
@@ -69,24 +103,56 @@ export function MapToolbar({ canEdit }: { canEdit: boolean }) {
           {addingSource ? id.source.cancelAdd : id.source.add}
         </Button>
       )}
-      <ToggleButton
-        pressed={showLocation}
-        onClick={() => setShowLocation(!showLocation)}
+      {canEdit && (
+        <Button
+          type="button"
+          size="sm"
+          variant={moving ? "secondary" : "outline"}
+          aria-pressed={moving}
+          className="pointer-events-auto min-h-11 shadow-md md:hidden"
+          onClick={() => setMode(moving ? "idle" : "move")}
+        >
+          <MoveIcon />
+          {id.mobile.moveMode}
+        </Button>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        aria-expanded={displayOpen}
+        className="pointer-events-auto min-h-11 shadow-md md:hidden"
+        onClick={() => setDisplayOpen((v) => !v)}
       >
-        {id.toggles.showLocation}
-      </ToggleButton>
-      <ToggleButton
-        pressed={showTypeIcon}
-        onClick={() => setShowTypeIcon(!showTypeIcon)}
+        <SlidersHorizontalIcon />
+        {id.mobile.display}
+      </Button>
+      <div
+        className={cn(
+          "flex-wrap items-start gap-2 max-md:flex-col",
+          displayOpen ? "flex" : "hidden",
+          "md:flex",
+        )}
       >
-        {id.toggles.showTypeIcon}
-      </ToggleButton>
-      <ToggleButton
-        pressed={showConnections}
-        onClick={() => setShowConnections(!showConnections)}
-      >
-        {id.toggles.showConnections}
-      </ToggleButton>
+        <ToggleButton
+          pressed={showLocation}
+          onClick={() => setShowLocation(!showLocation)}
+        >
+          {id.toggles.showLocation}
+        </ToggleButton>
+        <ToggleButton
+          pressed={showTypeIcon}
+          onClick={() => setShowTypeIcon(!showTypeIcon)}
+        >
+          {id.toggles.showTypeIcon}
+        </ToggleButton>
+        <ToggleButton
+          pressed={showConnections}
+          onClick={() => setShowConnections(!showConnections)}
+        >
+          {id.toggles.showConnections}
+        </ToggleButton>
+      </div>
     </div>
   );
 }

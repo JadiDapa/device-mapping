@@ -11,6 +11,7 @@ import { DeviceMarker, type MarkerDevice } from "./device-marker";
 import { Legend } from "./legend";
 import { useMapStore } from "./map-store";
 import MapView from "./map-view";
+import { MyLocation } from "./my-location";
 import { SourceMarker, type MarkerSource } from "./source-marker";
 import { BOUNDARY_CLASS } from "./zone-boundary";
 
@@ -90,6 +91,7 @@ export default function AllZonesMap({ zones, devices, sources }: Props) {
     <div className="relative size-full">
       <MapView boundary={null} className="absolute inset-0 rounded-none">
         <FitAll points={fitPoints} />
+        <MyLocation />
         {zones.map(
           (z) =>
             z.boundary && (

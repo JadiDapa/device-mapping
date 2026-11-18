@@ -18,7 +18,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVerticalIcon, NetworkIcon, PlusIcon } from "lucide-react";
+import {
+  GripVerticalIcon,
+  LocateFixedIcon,
+  NetworkIcon,
+  PlusIcon,
+} from "lucide-react";
 import { useMapStore } from "@/components/map/map-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +46,8 @@ type Props = {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onAddSource: () => void;
+  /** Add a device at the browser GPS position. */
+  onAddHere: () => void;
 };
 
 export function DeviceSidebar({
@@ -51,6 +58,7 @@ export function DeviceSidebar({
   onSelect,
   onAdd,
   onAddSource,
+  onAddHere,
 }: Props) {
   const filters = useMapStore((s) => s.filters);
   const selectedId = useMapStore((s) => s.selectedId);
@@ -101,6 +109,15 @@ export function DeviceSidebar({
               <Button size="sm" onClick={onAdd}>
                 <PlusIcon />
                 {id.device.add}
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={onAddHere}
+                aria-label={id.geo.addAtMyLocation}
+                title={id.geo.addAtMyLocation}
+              >
+                <LocateFixedIcon />
               </Button>
               <Button
                 size="icon"

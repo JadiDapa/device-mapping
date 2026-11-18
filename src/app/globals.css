@@ -267,3 +267,18 @@
 .zone-boundary--link:hover {
   fill-opacity: 0.18;
 }
+
+/* "Posisi saya": dot + accuracy circle, themed via tokens (CSS wins over the
+   presentation attributes Leaflet writes on the SVG paths). */
+.my-location-dot {
+  stroke: var(--map-marker-border);
+  stroke-width: 2px;
+  fill: var(--primary);
+  fill-opacity: 1;
+}
+.my-location-accuracy {
+  stroke: var(--primary);
+  stroke-width: 1px;
+  fill: var(--primary);
+  fill-opacity: 0.12;
+}

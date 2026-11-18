@@ -25,9 +25,11 @@ import { SourceForm } from "@/components/sources/source-form";
 import { Button } from "@/components/ui/button";
 import type { GeoJsonPolygon } from "@/db/schema";
 import { filterDevices } from "@/lib/device-filter";
+import { geoErrorMessage, locate } from "@/lib/geolocation";
 import { isPointInZone } from "@/lib/geo";
 import { id } from "@/lib/i18n/id";
 import type { DeviceStatus } from "@/lib/status";
+import { cn } from "@/lib/utils";
 import type {
   DeviceStatusInput,
   DeviceUpdateInput,
@@ -136,6 +138,8 @@ export function ZoneWorkspace({
     lng: number;
   } | null>(null);
   const [editingSource, setEditingSource] = useState(false);
+  // Mobile bottom sheet: a peek strip over the map, or expanded for a panel.
+  const [sheet, setSheet] = useState<"peek" | "expanded">("peek");
 
   const mode = useMapStore((s) => s.mode);
   const setMode = useMapStore((s) => s.setMode);
@@ -169,13 +173,27 @@ export function ZoneWorkspace({
   }, [mode, types.length, setMode]);
 
   useEffect(() => {
-    if (mode !== "addDevice" && mode !== "addSource") return;
+    if (mode === "idle") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMode("idle");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mode, setMode]);
+
+  const hasPanel = Boolean(
+    draft || sourceDraft || selectedId || selectedSourceId || editingSource,
+  );
+  // A selection / form opens the sheet; going back to the list (or starting
+  // an add / move mode, which needs the map visible) collapses it.
+  useEffect(() => {
+    // Tapping a marker while moving points must not cover the map.
+    if (useMapStore.getState().mode === "move") return;
+    setSheet(hasPanel ? "expanded" : "peek");
+  }, [hasPanel]);
+  useEffect(() => {
+    if (mode !== "idle") setSheet("peek");
+  }, [mode]);
 
   const selected = optimistic.find((d) => d.id === selectedId) ?? null;
   const selectedSource =
@@ -328,6 +346,24 @@ export function ZoneWorkspace({
     [select, selectSource, setMode, warnIfOutside],
   );
 
+  /** "Tambah di posisi saya": same flow as picking a point on the map. */
+  async function onAddHere() {
+    if (types.length === 0) {
+      toast.error(id.device.noTypes);
+      return;
+    }
+    const loading = toast.loading(id.geo.locating);
+    try {
+      const p = await locate();
+      setMode("addDevice");
+      onPick({ lat: p.lat, lng: p.lng });
+    } catch (error) {
+      toast.error(geoErrorMessage(error));
+    } finally {
+      toast.dismiss(loading);
+    }
+  }
+
   function onReorder(orderedIds: string[]) {
     startTransition(async () => {
       apply({ type: "reorder", ids: orderedIds });
@@ -441,10 +477,11 @@ export function ZoneWorkspace({
 
   const nextSeq = optimistic.length + 1;
   const adding = mode === "addDevice" || mode === "addSource";
+  const moving = mode === "move";
   const zoneChoices = [{ id: zone.id, name: zone.name }, ...otherZones];
 
   return (
-    <div className="flex flex-col md:h-[calc(100dvh-3.5rem)]">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
       <div className="flex items-start justify-between gap-4 border-b px-4 py-3">
         <div className="min-w-0">
           <h1 className="truncate text-xl font-semibold">{zone.name}</h1>
@@ -472,8 +509,16 @@ export function ZoneWorkspace({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="relative h-[60vh] min-h-80 md:h-auto md:flex-1">
+      <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
+        <div
+          className={cn(
+            "relative min-h-0 flex-1",
+            // Keep the (mandatory) tile attribution above the sheet.
+            sheet === "expanded"
+              ? "max-md:[&_.leaflet-bottom]:bottom-[70%]!"
+              : "max-md:[&_.leaflet-bottom]:bottom-40!",
+          )}
+        >
           <ZoneMap
             boundary={zone.boundary}
             center={zone.center}
@@ -491,7 +536,7 @@ export function ZoneWorkspace({
           />
           <div className="pointer-events-none absolute inset-0 z-[1000]">
             <div className="absolute top-3 right-3 left-14 sm:right-64">
-              <MapToolbar canEdit={isAdmin} />
+              <MapToolbar canEdit={isAdmin} onAddHere={onAddHere} />
             </div>
             <div className="absolute top-14 right-3 sm:top-3">
               <SummaryBox
@@ -501,13 +546,22 @@ export function ZoneWorkspace({
                 counts={summary.counts}
               />
             </div>
-            <div className="absolute bottom-7 left-3">
+            <div
+              className={cn(
+                "absolute bottom-7 left-3 max-md:bottom-44",
+                sheet === "expanded" && "max-md:hidden",
+              )}
+            >
               <Legend />
             </div>
-            {adding && (
-              <div className="bg-card text-card-foreground pointer-events-auto absolute right-3 bottom-7 left-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm shadow-md">
+            {(adding || moving) && (
+              <div className="bg-card text-card-foreground pointer-events-auto absolute right-3 bottom-7 left-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm shadow-md max-md:bottom-44">
                 <span role="status">
-                  {mode === "addSource" ? id.source.addHint : id.device.addHint}
+                  {moving
+                    ? id.mobile.moveHint
+                    : mode === "addSource"
+                      ? id.source.addHint
+                      : id.device.addHint}
                 </span>
                 <Button
                   type="button"
@@ -516,7 +570,7 @@ export function ZoneWorkspace({
                   className="min-h-9"
                   onClick={() => setMode("idle")}
                 >
-                  {id.common.cancel}
+                  {moving ? id.mobile.moveDone : id.common.cancel}
                 </Button>
               </div>
             )}
@@ -525,8 +579,29 @@ export function ZoneWorkspace({
 
         <aside
           aria-label={id.sidebar.title}
-          className="bg-background flex min-h-0 flex-col border-t md:w-96 md:border-t-0 md:border-l"
+          className={cn(
+            "bg-background flex min-h-0 flex-col border-t md:w-96 md:border-t-0 md:border-l",
+            // Below md the panel is a bottom sheet over the map.
+            "max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-[1000] max-md:overflow-hidden max-md:rounded-t-xl max-md:shadow-2xl max-md:transition-[height]",
+            sheet === "expanded" ? "max-md:h-[70%]" : "max-md:h-40",
+          )}
         >
+          <button
+            type="button"
+            onClick={() =>
+              setSheet((v) => (v === "peek" ? "expanded" : "peek"))
+            }
+            aria-expanded={sheet === "expanded"}
+            aria-label={
+              sheet === "expanded" ? id.mobile.collapse : id.mobile.expand
+            }
+            className="flex min-h-11 shrink-0 items-center justify-center md:hidden"
+          >
+            <span
+              className="bg-muted-foreground/40 h-1.5 w-10 rounded-full"
+              aria-hidden
+            />
+          </button>
           {sourceDraft || (editingSource && selectedSource) ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               {sourceDraft ? (
@@ -627,6 +702,7 @@ export function ZoneWorkspace({
               onSelect={onSelectFromList}
               onAdd={() => setMode("addDevice")}
               onAddSource={() => setMode("addSource")}
+              onAddHere={onAddHere}
             />
           )}
         </aside>

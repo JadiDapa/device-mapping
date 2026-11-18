@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback } from "react";
+import { useIsDesktop } from "@/lib/use-media-query";
 import type { GeoJsonPolygon } from "@/db/schema";
 import { ConnectionLines } from "./connection-lines";
 import { DeviceMarker, type MarkerDevice } from "./device-marker";
 import { useMapStore } from "./map-store";
 import { FlyTo, PickPosition } from "./map-interactions";
 import MapView from "./map-view";
+import { MyLocation } from "./my-location";
 import { SourceMarker, type MarkerSource } from "./source-marker";
 
 export type ZoneMapDevice = MarkerDevice & { networkSourceId: string | null };
@@ -58,6 +60,10 @@ export default function ZoneMap({
   const showLocation = useMapStore((s) => s.showLocation);
   const showTypeIcon = useMapStore((s) => s.showTypeIcon);
   const showConnections = useMapStore((s) => s.showConnections);
+  // Desktop drags directly; on touch screens markers only move in "move" mode
+  // so scrolling or tapping never shifts a point by accident (PRD F4).
+  const isDesktop = useIsDesktop();
+  const canDrag = canEdit && (isDesktop || mode === "move");
 
   const flyTarget =
     devices.find((d) => d.id === selectedId) ??
@@ -81,7 +87,7 @@ export default function ZoneMap({
           key={s.id}
           source={s}
           selected={s.id === selectedSourceId}
-          draggable={canEdit}
+          draggable={canDrag}
           onSelect={onSelectSource}
           onMoved={onSourceMoved}
         />
@@ -91,7 +97,7 @@ export default function ZoneMap({
           key={d.id}
           device={d}
           selected={d.id === selectedId}
-          draggable={canEdit}
+          draggable={canDrag}
           showLocation={showLocation}
           showTypeIcon={showTypeIcon}
           onSelect={onSelect}
@@ -132,6 +138,7 @@ export default function ZoneMap({
         onPick={onPick}
       />
       <FlyTo token={flyToken} target={flyTarget} />
+      <MyLocation />
     </MapView>
   );
 }

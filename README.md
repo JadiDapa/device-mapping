@@ -129,3 +129,31 @@ sudah masuk, termasuk tamu) membuka halaman internal `/print/*` di Chromium head
 - Build standalone menyertakan seluruh paket `playwright-core` (`outputFileTracingIncludes`
   di `next.config.ts`), karena tracer tidak melihat `browsers.json` yang dibaca saat runtime.
 - Export butuh akses internet ke server tile (Esri) dari server aplikasi.
+
+## Manajemen user (`/admin/users`, admin)
+
+Tambah user, ubah peran (`admin` / `guest`), reset kata sandi, nonaktifkan /
+aktifkan. Nonaktif = flag `banned` milik plugin admin Better Auth (login
+ditolak) + semua sesi user dihapus. Aturan: admin tidak bisa mengubah peran /
+menonaktifkan dirinya sendiri, dan harus tersisa minimal satu admin aktif.
+Reset kata sandi juga mengakhiri sesi user tersebut.
+
+## Mobile (di bawah `md`)
+
+- Daftar perangkat / detail / form menjadi **bottom sheet** di atas peta
+  (ketuk handle untuk memperluas/menciutkan; terbuka otomatis saat memilih
+  titik). Atribusi tile selalu tetap terlihat di atas sheet.
+- **Mode pindah**: marker hanya bisa digeser setelah admin menekan
+  "Mode pindah" (desktop tetap drag langsung).
+- **Posisi saya** dan **Tambah di posisi saya** memakai geolocation browser.
+  Browser hanya mengizinkannya di **secure context** (HTTPS atau
+  `localhost`). Lewat `http://<IP-LAN>` tombolnya menampilkan pesan jelas;
+  untuk dipakai di lapangan, layani aplikasi lewat HTTPS (mis. reverse proxy).
+
+## Penyimpangan dari PRD (M7)
+
+- **E2E §11 tidak ditambah di M7** (atas permintaan, demi waktu): tidak ada
+  e2e untuk skenario guest (#4) dan mobile. Penolakan guest (403/401)
+  diverifikasi di level Server Action oleh test Vitest.
+- Manajemen user memakai Drizzle langsung (hash scrypt Better Auth), bukan
+  `auth.api.*` plugin admin, agar bisa diuji dengan test DB tanpa sesi HTTP.

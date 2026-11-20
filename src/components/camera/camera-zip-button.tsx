@@ -45,9 +45,10 @@ export function CameraZipButton({
       onClick={onClick}
       disabled={busy || photoCount === 0}
       title={photoCount === 0 ? id.camera.zipEmpty : undefined}
+      className="max-md:min-h-11 max-md:min-w-11"
     >
       {busy ? <Loader2Icon className="animate-spin" /> : <FileArchiveIcon />}
-      {id.camera.zipDownload}
+      <span className="max-sm:sr-only">{id.camera.zipDownload}</span>
     </Button>
   );
 }

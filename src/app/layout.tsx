@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 // Browser-chrome colour (meta only; cannot use CSS variables). Matches the
 // --background of each scheme.
 export const viewport: Viewport = {
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0b1f26" },

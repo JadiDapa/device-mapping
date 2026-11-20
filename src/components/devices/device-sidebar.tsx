@@ -95,8 +95,8 @@ export function DeviceSidebar({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-3 border-b p-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="space-y-3 border-b p-3 md:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">
             {id.sidebar.title}{" "}
             <span className="text-muted-foreground text-sm font-normal tabular-nums">
@@ -111,14 +111,15 @@ export function DeviceSidebar({
             </span>
           </h2>
           {isAdmin && (
-            <div className="flex gap-2 md:hidden">
-              <Button size="sm" onClick={onAdd}>
+            <div className="flex w-full items-center gap-2 md:hidden">
+              <Button size="sm" className="min-h-11 flex-1" onClick={onAdd}>
                 <PlusIcon />
                 {id.device.add}
               </Button>
               <Button
                 size="icon"
                 variant="outline"
+                className="size-11"
                 onClick={onAddHere}
                 aria-label={id.geo.addAtMyLocation}
                 title={id.geo.addAtMyLocation}
@@ -128,6 +129,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
+                className="size-11"
                 onClick={onAddSource}
                 aria-label={id.source.add}
                 title={id.source.add}
@@ -137,6 +139,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
+                className="size-11"
                 onClick={onAddExtender}
                 aria-label={id.extender.add}
                 title={id.extender.add}
@@ -146,6 +149,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
+                className="size-11"
                 onClick={onAddCamera}
                 aria-label={id.camera.add}
                 title={id.camera.add}

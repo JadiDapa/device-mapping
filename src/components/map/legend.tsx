@@ -13,14 +13,14 @@ export function Legend() {
   return (
     <section
       aria-label={id.legend.title}
-      className="bg-card/95 text-card-foreground pointer-events-auto w-56 rounded-lg border shadow-md backdrop-blur"
+      className="bg-card/95 text-card-foreground pointer-events-auto w-44 rounded-lg border shadow-md backdrop-blur sm:w-56"
     >
       <button
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label={open ? id.legend.collapse : id.legend.expand}
-        className="flex min-h-9 w-full items-center justify-between px-3 text-sm font-medium"
+        className="flex min-h-11 w-full items-center justify-between px-3 text-sm font-medium sm:min-h-9"
       >
         {id.legend.title}
         {open ? (

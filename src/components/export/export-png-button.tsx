@@ -42,9 +42,10 @@ export function ExportPngButton({
       size="sm"
       onClick={onClick}
       disabled={busy}
+      className="max-md:min-h-11 max-md:min-w-11"
     >
       {busy ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
-      {id.export.downloadPng}
+      <span className="max-sm:sr-only">{id.export.downloadPng}</span>
     </Button>
   );
 }

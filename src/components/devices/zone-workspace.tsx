@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useOptimistic,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -179,6 +180,7 @@ export function ZoneWorkspace({
   const [editingSource, setEditingSource] = useState(false);
   // Mobile bottom sheet: a peek strip over the map, or expanded for a panel.
   const [sheet, setSheet] = useState<"peek" | "expanded">("peek");
+  const swipeY = useRef<number | null>(null);
 
   const mode = useMapStore((s) => s.mode);
   const setMode = useMapStore((s) => s.setMode);
@@ -675,11 +677,13 @@ export function ZoneWorkspace({
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
-      <div className="flex items-start justify-between gap-4 border-b px-4 py-3">
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-2 sm:items-start sm:gap-4 sm:px-4 sm:py-3">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold">{zone.name}</h1>
+          <h1 className="truncate text-lg font-semibold sm:text-xl">
+            {zone.name}
+          </h1>
           {zone.description && (
-            <p className="text-muted-foreground truncate text-sm">
+            <p className="text-muted-foreground hidden truncate text-sm sm:block">
               {zone.description}
             </p>
           )}
@@ -689,7 +693,7 @@ export function ZoneWorkspace({
             </p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {isAdmin && (
             <CameraZipButton
               zoneId={zone.id}
@@ -702,10 +706,15 @@ export function ZoneWorkspace({
           )}
           <ExportPngButton zoneId={zone.id} zoneName={zone.name} />
           {isAdmin && (
-            <Button asChild variant="outline" size="sm">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="max-md:min-h-11 max-md:min-w-11"
+            >
               <Link href={`/zones/${zone.id}/edit`}>
                 <PencilIcon />
-                {id.common.edit}
+                <span className="max-sm:sr-only">{id.common.edit}</span>
               </Link>
             </Button>
           )}
@@ -718,7 +727,7 @@ export function ZoneWorkspace({
             "relative min-h-0 flex-1",
             // Keep the (mandatory) tile attribution above the sheet.
             sheet === "expanded"
-              ? "max-md:[&_.leaflet-bottom]:bottom-[70%]!"
+              ? "max-md:[&_.leaflet-bottom]:bottom-[75%]!"
               : "max-md:[&_.leaflet-bottom]:bottom-40!",
           )}
         >
@@ -752,7 +761,12 @@ export function ZoneWorkspace({
             <div className="absolute top-3 right-3 left-14 sm:right-64">
               <MapToolbar canEdit={isAdmin} onAddHere={onAddHere} />
             </div>
-            <div className="absolute top-14 right-3 sm:top-3">
+            <div
+              className={cn(
+                "absolute right-3 bottom-44 sm:top-3 sm:bottom-auto",
+                (sheet === "expanded" || adding || moving) && "max-sm:hidden",
+              )}
+            >
               <SummaryBox
                 name={zone.name}
                 total={summary.total}
@@ -763,7 +777,7 @@ export function ZoneWorkspace({
             <div
               className={cn(
                 "absolute bottom-7 left-3 max-md:bottom-44",
-                sheet === "expanded" && "max-md:hidden",
+                (sheet === "expanded" || adding || moving) && "max-md:hidden",
               )}
             >
               <Legend />
@@ -801,7 +815,8 @@ export function ZoneWorkspace({
             "bg-background flex min-h-0 flex-col border-t md:w-96 md:border-t-0 md:border-l",
             // Below md the panel is a bottom sheet over the map.
             "max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-[1000] max-md:overflow-hidden max-md:rounded-t-xl max-md:shadow-2xl max-md:transition-[height]",
-            sheet === "expanded" ? "max-md:h-[70%]" : "max-md:h-40",
+            "max-md:pb-[env(safe-area-inset-bottom)]",
+            sheet === "expanded" ? "max-md:h-[75%]" : "max-md:h-40",
           )}
         >
           <button
@@ -809,6 +824,21 @@ export function ZoneWorkspace({
             onClick={() =>
               setSheet((v) => (v === "peek" ? "expanded" : "peek"))
             }
+            onTouchStart={(e) => {
+              swipeY.current = e.touches[0]?.clientY ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const start = swipeY.current;
+              swipeY.current = null;
+              const end = e.changedTouches[0]?.clientY;
+              if (start == null || end == null) return;
+              const dy = end - start;
+              if (Math.abs(dy) < 24) return;
+              // Swipe up expands, swipe down collapses; the tap fallback is
+              // suppressed so it doesn't toggle straight back.
+              e.preventDefault();
+              setSheet(dy < 0 ? "expanded" : "peek");
+            }}
             aria-expanded={sheet === "expanded"}
             aria-label={
               sheet === "expanded" ? id.mobile.collapse : id.mobile.expand

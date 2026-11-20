@@ -34,10 +34,26 @@ function launchArgs(): string[] {
   return args;
 }
 
+/**
+ * Vercel (AWS Lambda) functions have no browser installed, so there we launch
+ * the serverless Chromium build from @sparticuz/chromium instead. Everywhere
+ * else (dev, Docker) the Chromium installed by Playwright is used.
+ */
+async function launchBrowser(): Promise<Browser> {
+  if (process.env.VERCEL) {
+    const { default: sparticuz } = await import("@sparticuz/chromium");
+    return chromium.launch({
+      headless: true,
+      executablePath: await sparticuz.executablePath(),
+      args: [...sparticuz.args, "--disable-dev-shm-usage"],
+    });
+  }
+  return chromium.launch({ headless: true, args: launchArgs() });
+}
+
 async function getBrowser(): Promise<Browser> {
   if (!globalThis.__exportBrowser) {
-    const launching = chromium
-      .launch({ headless: true, args: launchArgs() })
+    const launching = launchBrowser()
       .then((browser) => {
         browser.on("disconnected", () => {
           if (globalThis.__exportBrowser === launching) {
@@ -79,10 +95,16 @@ async function withPage<T>(
 ): Promise<T> {
   return withSlot(async () => {
     const browser = await getBrowser();
+    // On Vercel the print pages are fetched over the public URL; the bypass
+    // secret lets that request through Deployment Protection when it is on.
+    const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
     const context = await browser.newContext({
       viewport,
       colorScheme: "light",
       deviceScaleFactor: 1,
+      ...(bypass
+        ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypass } }
+        : {}),
     });
     try {
       const page = await context.newPage();

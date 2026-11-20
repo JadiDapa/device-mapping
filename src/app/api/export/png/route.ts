@@ -9,6 +9,8 @@ import { getZone, ZoneNotFoundError } from "@/server/zones";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Chromium cold start + map render can exceed the default function timeout.
+export const maxDuration = 60;
 
 /** PNG of one zone's map (PRD F7). Any signed-in user, guests included. */
 export async function GET(request: NextRequest) {

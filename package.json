@@ -30,6 +30,7 @@
     "@hookform/resolvers": "7.0.7",
     "@neon/config": "^1.14.3",
     "@neon/env": "^2.1.6",
+    "@sparticuz/chromium": "^153.0.0",
     "@turf/bbox": "7.4.0",
     "@turf/boolean-point-in-polygon": "7.4.0",
     "@turf/center": "7.4.0",

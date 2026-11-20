@@ -60,7 +60,9 @@ RUN chmod +x ./docker-entrypoint.sh \
 # container without extra capabilities, hence EXPORT_NO_SANDBOX.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV EXPORT_NO_SANDBOX=1
-RUN npx playwright install --with-deps chromium \n    && chmod -R a+rX /ms-playwright \n    && rm -rf /var/lib/apt/lists/*
+RUN npx playwright install --with-deps chromium \
+    && chmod -R a+rX /ms-playwright \
+    && rm -rf /var/lib/apt/lists/*
 
 USER nextjs
 

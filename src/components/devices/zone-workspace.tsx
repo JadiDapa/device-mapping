@@ -783,7 +783,7 @@ export function ZoneWorkspace({
               <Legend />
             </div>
             {(adding || moving) && (
-              <div className="bg-card text-card-foreground pointer-events-auto absolute right-3 bottom-7 left-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm shadow-md max-md:bottom-44">
+              <div className="bg-card text-card-foreground pointer-events-auto absolute right-3 bottom-7 left-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-md border py-1 pr-1 pl-3 text-sm shadow-md max-md:bottom-[13.5rem]">
                 <span role="status">
                   {moving
                     ? id.mobile.moveHint

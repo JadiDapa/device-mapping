@@ -112,14 +112,19 @@ export function DeviceSidebar({
           </h2>
           {isAdmin && (
             <div className="flex w-full items-center gap-2 md:hidden">
-              <Button size="sm" className="min-h-11 flex-1" onClick={onAdd}>
+              <Button
+                size="sm"
+                className="min-h-11 min-w-0 flex-1"
+                onClick={onAdd}
+                aria-label={id.device.add}
+              >
                 <PlusIcon />
-                {id.device.add}
+                <span className="truncate">{id.device.addShort}</span>
               </Button>
               <Button
                 size="icon"
                 variant="outline"
-                className="size-11"
+                className="size-10 shrink-0"
                 onClick={onAddHere}
                 aria-label={id.geo.addAtMyLocation}
                 title={id.geo.addAtMyLocation}
@@ -129,7 +134,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
-                className="size-11"
+                className="size-10 shrink-0"
                 onClick={onAddSource}
                 aria-label={id.source.add}
                 title={id.source.add}
@@ -139,7 +144,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
-                className="size-11"
+                className="size-10 shrink-0"
                 onClick={onAddExtender}
                 aria-label={id.extender.add}
                 title={id.extender.add}
@@ -149,7 +154,7 @@ export function DeviceSidebar({
               <Button
                 size="icon"
                 variant="outline"
-                className="size-11"
+                className="size-10 shrink-0"
                 onClick={onAddCamera}
                 aria-label={id.camera.add}
                 title={id.camera.add}

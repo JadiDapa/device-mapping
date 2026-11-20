@@ -1,6 +1,7 @@
 "use client";
 
-import { SearchIcon } from "lucide-react";
+import { useState } from "react";
+import { SearchIcon, SlidersHorizontalIcon } from "lucide-react";
 import { useMapStore } from "@/components/map/map-store";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,93 +56,118 @@ export function DeviceFilters({ types }: { types: TypeChip[] }) {
   const filters = useMapStore((s) => s.filters);
   const setFilters = useMapStore((s) => s.setFilters);
   const resetFilters = useMapStore((s) => s.resetFilters);
+  // Below md the chips sit behind a toggle so the device list keeps room.
+  const [open, setOpen] = useState(false);
+  const active = hasActiveFilter(filters);
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <SearchIcon
-          aria-hidden
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
-        />
-        <Input
-          type="search"
-          value={filters.query}
-          onChange={(e) => setFilters({ query: e.target.value })}
-          placeholder={id.sidebar.search}
-          aria-label={id.sidebar.search}
-          className="pl-8"
-        />
-      </div>
-
-      <div
-        role="group"
-        aria-label={id.sidebar.filterStatus}
-        className="flex flex-wrap gap-1.5"
-      >
-        {DEVICE_STATUSES.map((s: DeviceStatus) => (
-          <Chip
-            key={s}
-            pressed={filters.statuses.includes(s)}
-            onClick={() =>
-              setFilters({ statuses: toggle(filters.statuses, s) })
-            }
-          >
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <SearchIcon
+            aria-hidden
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+          />
+          <Input
+            type="search"
+            value={filters.query}
+            onChange={(e) => setFilters({ query: e.target.value })}
+            placeholder={id.sidebar.search}
+            aria-label={id.sidebar.search}
+            className="pl-8"
+          />
+        </div>
+        <Button
+          type="button"
+          variant={active ? "secondary" : "outline"}
+          size="icon"
+          className="relative size-10 shrink-0 md:hidden"
+          aria-expanded={open}
+          aria-label={id.sidebar.filters}
+          title={id.sidebar.filters}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <SlidersHorizontalIcon />
+          {active && (
             <span
               aria-hidden
-              className="size-2 rounded-full"
-              style={{ backgroundColor: statusColor[s] }}
+              className="bg-primary absolute top-1 right-1 size-2 rounded-full"
             />
-            {statusLabel[s]}
-          </Chip>
-        ))}
+          )}
+        </Button>
       </div>
 
-      {types.length > 0 && (
+      <div className={cn("space-y-3", !open && "max-md:hidden")}>
         <div
           role="group"
-          aria-label={id.sidebar.filterType}
+          aria-label={id.sidebar.filterStatus}
           className="flex flex-wrap gap-1.5"
         >
-          {types.map((t) => {
-            const Icon = getDeviceIcon(t.icon);
-            return (
-              <Chip
-                key={t.id}
-                pressed={filters.typeIds.includes(t.id)}
-                onClick={() =>
-                  setFilters({ typeIds: toggle(filters.typeIds, t.id) })
-                }
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {t.name}
-              </Chip>
-            );
-          })}
+          {DEVICE_STATUSES.map((s: DeviceStatus) => (
+            <Chip
+              key={s}
+              pressed={filters.statuses.includes(s)}
+              onClick={() =>
+                setFilters({ statuses: toggle(filters.statuses, s) })
+              }
+            >
+              <span
+                aria-hidden
+                className="size-2 rounded-full"
+                style={{ backgroundColor: statusColor[s] }}
+              />
+              {statusLabel[s]}
+            </Chip>
+          ))}
         </div>
-      )}
 
-      <div className="flex items-center justify-between gap-2">
-        <label
-          htmlFor="filter-router-only"
-          className="flex min-h-8 items-center gap-2 text-sm"
-        >
-          <Checkbox
-            id="filter-router-only"
-            checked={filters.routerOnly}
-            onCheckedChange={(v) => setFilters({ routerOnly: v === true })}
-          />
-          {id.sidebar.routerOnly}
-        </label>
-        {hasActiveFilter(filters) && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={resetFilters}
+        {types.length > 0 && (
+          <div
+            role="group"
+            aria-label={id.sidebar.filterType}
+            className="flex flex-wrap gap-1.5"
           >
-            {id.sidebar.resetFilters}
-          </Button>
+            {types.map((t) => {
+              const Icon = getDeviceIcon(t.icon);
+              return (
+                <Chip
+                  key={t.id}
+                  pressed={filters.typeIds.includes(t.id)}
+                  onClick={() =>
+                    setFilters({ typeIds: toggle(filters.typeIds, t.id) })
+                  }
+                >
+                  <Icon className="size-3.5" aria-hidden />
+                  {t.name}
+                </Chip>
+              );
+            })}
+          </div>
         )}
+
+        <div className="flex items-center justify-between gap-2">
+          <label
+            htmlFor="filter-router-only"
+            className="flex min-h-8 items-center gap-2 text-sm"
+          >
+            <Checkbox
+              id="filter-router-only"
+              checked={filters.routerOnly}
+              onCheckedChange={(v) => setFilters({ routerOnly: v === true })}
+            />
+            {id.sidebar.routerOnly}
+          </label>
+          {hasActiveFilter(filters) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+            >
+              {id.sidebar.resetFilters}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

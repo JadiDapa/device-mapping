@@ -1,14 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { id } from "@/lib/i18n/id";
+import { useIsDesktop } from "@/lib/use-media-query";
 import { LegendItems } from "./legend-items";
 import { useMapStore } from "./map-store";
 
 /** Collapsible legend overlay (PRD F4). */
 export function Legend() {
-  const open = useMapStore((s) => s.legendOpen);
-  const setOpen = useMapStore((s) => s.setLegendOpen);
+  const storeOpen = useMapStore((s) => s.legendOpen);
+  const setStoreOpen = useMapStore((s) => s.setLegendOpen);
+  // On phones the legend always starts collapsed (it would cover the map and
+  // the tile attribution); the persisted choice only applies on desktop.
+  const desktop = useIsDesktop();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const open = desktop ? storeOpen : mobileOpen;
+  const setOpen = desktop ? setStoreOpen : setMobileOpen;
 
   return (
     <section
